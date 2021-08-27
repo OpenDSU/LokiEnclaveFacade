@@ -1,6 +1,0 @@
-{"pk":"7wrngAgakKEUCf63erkrWHQCiEAixnpQxsYuzSpDf6z7","value":{"name":"test 0","age":10,"id":313},"did":"DID_947","meta":{"revision":0,"created":1629988045094,"version":0},"$loki":1}
-{"pk":"DYMxQnHz8FepgS6MAMzVc14N6LvbQ9cLKqzxQVR8mJMA","value":{"name":"test 1","age":15,"id":132},"did":"DID_838","meta":{"revision":0,"created":1629988045098,"version":0},"$loki":2}
-{"pk":"5BXDyRJQNdqueLisQjRcam6dqfNiNGF98JFoERdGkrZB","value":{"name":"test 2","age":20,"id":813},"did":"DID_441","meta":{"revision":0,"created":1629988045100,"version":0},"$loki":3}
-{"pk":"4NyqgYrV4onCXwR6iMwiGHCuiQZ9zCmsv1QQYwG8tcE9","value":{"name":"test 3","age":25,"id":301},"did":"DID_888","meta":{"revision":0,"created":1629988045103,"version":0},"$loki":4}
-{"pk":"9D2DM8cU9VghWfgdUoCdEFLadYTgk5DSTvMSMreRD6Mm","value":{"name":"test 4","age":30,"id":243},"did":"DID_833","meta":{"revision":0,"created":1629988045105,"version":0},"$loki":5}
-{"pk":"nFqT7nmt1DcZr4qKGXtcg6Qb5ctFJ84zY5QKPZQQetz","value":{"name":"test_new","id":15},"did":"DID_newPK","meta":{"revision":0,"created":1629988045108,"version":0},"$loki":6}

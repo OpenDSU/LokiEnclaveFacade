@@ -11,11 +11,8 @@ function getEnclaveDB(dbName) {
 
 assert.callback("Enclave dafault db insert test", (testFinishCallback) => {
   dc.createTestFolder("enclaveDBTest", async function (err, folder) {
-    const no_retries = 10;
-
-    let testDb = getEnclaveDB("test_db");
-    let deleteResult = await $$.promisify(testDb.deleteTable)("testTable")
-    assert.equal(deleteResult, true);
+    let dbPath = require("path").join(folder, "test_db");
+    let testDb = getEnclaveDB(dbPath);
 
     for (let i = 0; i < numberOfREcords; i++) {
       let pk = Math.floor(Math.random() * 5000);
@@ -85,7 +82,7 @@ assert.callback("Enclave dafault db insert test", (testFinishCallback) => {
       assert.equal(data[0].value.age < data[1].value.age && data[1].value.age < data[2].value.age, true)
     })
 
-    testDb.filterRecords("DID_newPK", "testTable", {"value.age": {$jgte: 15}}, null, 3,(err, data) => {
+    testDb.filterRecords("DID_newPK", "testTable", {"value.age": {$jgte: 15}}, null, 3, (err, data) => {
       assert.equal(err, null);
       assert.equal(data.length, 3);
       assert.equal(data[0].value.age < data[1].value.age && data[1].value.age < data[2].value.age, true)
@@ -98,4 +95,4 @@ assert.callback("Enclave dafault db insert test", (testFinishCallback) => {
     })
     testFinishCallback();
   })
-})
+}, 60000)

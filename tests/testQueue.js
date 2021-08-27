@@ -11,11 +11,8 @@ function getEnclaveDB(dbName) {
 
 assert.callback("Enclave Queue test", (testFinishCallback) => {
   dc.createTestFolder("enclaveQueueTest", async function (err, folder) {
-    const no_retries = 10;
-
-    let testQ = getEnclaveDB("test_queue");
-    let deleteResult = await $$.promisify(testQ.deleteTable)("queueTable")
-    assert.equal(deleteResult, true);
+    let dbPath = require("path").join(folder, "test_queue");
+    let testQ = getEnclaveDB(dbPath);
 
     for (let i = 0; i < numberOfRecords; i++) {
 
@@ -74,4 +71,4 @@ assert.callback("Enclave Queue test", (testFinishCallback) => {
 
     testFinishCallback();
   })
-})
+}, 60000)

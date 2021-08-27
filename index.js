@@ -4,7 +4,7 @@ const lfsa = require("./lib/lokijs/src/loki-fs-structured-adapter.js");
 const adapter = new lfsa();
 const defaultDBName = "defaultEnclaveDB"
 const defaultTableName = "defaultEnclaveTable"
-const defaultSaveInterval = 10000;
+const defaultSaveInterval = 10000; // milliseconds
 let bindAutoPendingFunctions = require("../opendsu/utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
 let filterOperationsMap = {
@@ -36,25 +36,24 @@ function EnclaveDB(dbName, autoSaveInterval) {
     if (!table) {
       return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
     }
-    let result = table.count();
-    callback(null, result)
-  }
-
-  this.deleteTable = function (tableName, callback) {
+    let result;
     try {
-      db.removeCollection(tableName);
+      result = table.count();
     } catch (err) {
-      return callback(createOpenDSUErrorWrapper(` Could not delete table ${tableName} `, err))
+      return callback(createOpenDSUErrorWrapper(`Could not count on ${tableName}`, err))
     }
-    callback(null, true);
+
+    callback(null, result)
   }
 
   this.insertRecord = function (forDID, tableName, pk, record, callback) {
     let table = db.getCollection(tableName) || db.addCollection(tableName);
-    table.insert({"pk": pk, "value": record, "did": forDID});
-    db.saveDatabase(error => {
-      error ? callback(error, false) : callback(null, true);
-    });
+    try {
+      table.insert({"pk": pk, "value": record, "did": forDID});
+    } catch (err) {
+      return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
+    }
+    callback(null, true);
   }
 
   this.deleteRecord = function (forDID, tableName, pk, callback) {
@@ -66,7 +65,12 @@ function EnclaveDB(dbName, autoSaveInterval) {
     if (!record) {
       return callback(createOpenDSUErrorWrapper(`Couldn't find a record for pk ${pk} in ${tableName}`))
     }
-    table.remove(record);
+    try {
+      table.remove(record);
+    } catch (err) {
+      return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
+    }
+
     callback(null, true)
   }
 
@@ -124,18 +128,23 @@ function EnclaveDB(dbName, autoSaveInterval) {
     }
 
     let result;
-    if (sort && max) {
-      result = table.chain().find(filterConditions).simplesort(sortObject[0], direction).limit(max).data()
-      callback(null, result);
+    try {
+      if (sort && max) {
+        result = table.chain().find(filterConditions).simplesort(sortObject[0], direction).limit(max).data();
+      }
+      if (sort && !max) {
+        result = table.chain().find(filterConditions).simplesort(sortObject[0], direction).data();
+      }
+      if (!sort && max) {
+        result = table.chain().find(filterConditions).limit(max).data();
+      }
+      if (!sort && !max) {
+        result = table.chain().find(filterConditions).data();
+      }
+    } catch (err) {
+      return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
     }
-    if (sort && !max) {
-      result = table.chain().find(filterConditions).simplesort(sortObject[0], direction).data();
-      callback(null, result);
-    }
-    if (!sort && max) {
-      result = table.chain().find(filterConditions).limit(max).data()
-      callback(null, result);
-    }
+    callback(null, result);
   }
 
   bindAutoPendingFunctions(this);
