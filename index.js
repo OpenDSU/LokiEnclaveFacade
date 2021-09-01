@@ -46,6 +46,12 @@ function EnclaveDB(dbName, autoSaveInterval) {
     callback(null, result)
   }
 
+  this.getCollections = function () {
+    return db.listCollections().map(collection => {
+      return collection.name
+    })
+  }
+
   this.insertRecord = function (forDID, tableName, pk, record, callback) {
     let table = db.getCollection(tableName) || db.addCollection(tableName);
     try {
