@@ -5,94 +5,79 @@ const assert = dc.assert;
 const numberOfREcords = 5;
 
 function getEnclaveDB(dbName) {
-  let EnclaveDB = require("../index.js");
-  return new EnclaveDB(dbName);
+    let EnclaveDB = require("../index.js");
+    return new EnclaveDB(dbName);
 }
 
 assert.callback("Enclave dafault db insert test", (testFinishCallback) => {
-  dc.createTestFolder("enclaveDBTest", async function (err, folder) {
-    let dbPath = require("path").join(folder, "test_db");
-    let testDb = getEnclaveDB(dbPath);
+    dc.createTestFolder("enclaveDBTest", async function (err, folder) {
+        const fs = require("fs");
+        let dbPath = require("path").join(folder, "test_db");
+        fs.mkdirSync(dbPath, {recursive: true});
+        let testDb = getEnclaveDB(dbPath);
 
-    for (let i = 0; i < numberOfREcords; i++) {
-      let pk = Math.floor(Math.random() * 5000);
-      testDb.insertRecord("DID_" + pk, "testTable", pk, {
-        name: `test ${i}`,
-        age: 10 + i * 5,
-        id: Math.floor(Math.random() * 1000)
-      }, (err, data) => {
-        assert.equal(err, null);
-        assert.equal(data, true);
-      });
-    }
-    testDb.count("testTable", (err, nr) => {
-      assert.equal(nr, numberOfREcords);
-    })
-
-    testDb.insertRecord("DID_newPK", "testTable", "newPk", {
-      name: "test_new",
-      id: Math.floor(Math.random() * 1000)
-    }, (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data, true);
-    });
-
-    testDb.count("testTable", (err, nr) => {
-      assert.equal(nr, numberOfREcords + 1);
-    })
-
-    testDb.getRecord("DID_newPK", "testTable", "newPk", (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data.value.name, "test_new");
-    })
-
-    testDb.getRecord("DID_newPK", "testTable", "wrongPk", (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data, null);
-    })
-
-    testDb.getRecord("DID_newPK", "wrongTable", "newPk", (err, data) => {
-      assert.notEqual(err, null);
-    })
-    testDb.deleteRecord("DID_newPK", "wrongTable", "newPk", (err, data) => {
-      assert.notEqual(err, null);
-    })
-
-    testDb.deleteRecord("DID_newPK", "testTable", "wrongPk", (err, data) => {
-      assert.notEqual(err, null);
-    })
-
-    testDb.deleteRecord("DID_newPK", "testTable", "newPk", (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data, true);
-      testDb.count("testTable", (err, nr) => {
+        for (let i = 0; i < numberOfREcords; i++) {
+            let pk = Math.floor(Math.random() * 5000);
+            await $$.promisify(testDb.insertRecord)("DID_" + pk, "testTable", pk, {
+                name: `test ${i}`,
+                age: 10 + i * 5,
+                id: Math.floor(Math.random() * 1000)
+            });
+        }
+        let nr = await $$.promisify(testDb.count)("testTable");
         assert.equal(nr, numberOfREcords);
-      })
-    })
 
-    testDb.filterRecords("DID_newPK", "testTable", {"value.age": {$between: [10, 20]}}, "value.age desc", (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data.length, 3);
-      assert.equal(data[0].value.age > data[1].value.age && data[1].value.age > data[2].value.age, true)
-    })
+        await $$.promisify(testDb.insertRecord)("DID_newPK", "testTable", "newPk", {
+            name: "test_new",
+            id: Math.floor(Math.random() * 1000)
+        });
 
-    testDb.filterRecords("DID_newPK", "testTable", {"value.age": {$between: [10, 20]}}, "value.age asc", (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data.length, 3);
-      assert.equal(data[0].value.age < data[1].value.age && data[1].value.age < data[2].value.age, true)
-    })
+        nr = await $$.promisify(testDb.count)("testTable")
+        assert.equal(nr, numberOfREcords + 1);
 
-    testDb.filterRecords("DID_newPK", "testTable", {"value.age": {$jgte: 15}}, null, 3, (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data.length, 3);
-      assert.equal(data[0].value.age < data[1].value.age && data[1].value.age < data[2].value.age, true)
-    })
+        let data = await $$.promisify(testDb.getRecord)("DID_newPK", "testTable", "newPk");
+        assert.equal(data.name, "test_new");
 
-    testDb.filterRecords("DID_newPK", "testTable", (err, data) => {
-      assert.equal(err, null);
-      assert.equal(data.length, 5);
-      assert.equal(data[0].value.age < data[1].value.age && data[1].value.age < data[2].value.age, true)
+        await $$.promisify(testDb.updateRecord)("DID_newPK", "testTable", "newPk", {name: "newName", "id": "someID"});
+
+        data = await $$.promisify(testDb.getRecord)("DID_newPK", "testTable", "wrongPk");
+        assert.equal(data, null);
+
+        try {
+            data = await $$.promisify(testDb.getRecord)("DID_newPK", "wrongTable", "newPk")
+        } catch (e) {
+            assert.notEqual(e, null);
+        }
+
+        try {
+            await $$.promisify(testDb.deleteRecord)("DID_newPK", "wrongTable", "newPk")
+        } catch (e) {
+            assert.notEqual(e, null);
+        }
+
+        try {
+            await $$.promisify(testDb.deleteRecord)("DID_newPK", "testTable", "wrongPk")
+        } catch (e) {
+
+            assert.notEqual(e, null);
+        }
+
+        try {
+            await $$.promisify(testDb.deleteRecord)("DID_newPK", "testTable", "newPk")
+        } catch (e) {
+            assert.equal(e, null);
+        }
+
+        nr = await $$.promisify(testDb.count)("testTable")
+        assert.equal(nr, numberOfREcords);
+
+        data = await $$.promisify(testDb.filter)("DID_newPK", "testTable")
+        assert.equal(data.length, 5);
+
+        data = await $$.promisify(testDb.filter)("DID_newPK", "testTable", "age >= 15", "desc", 3)
+        assert.equal(data.length, 3);
+        assert.equal(data[0].age < data[1].age && data[1].age < data[2].age, true)
+
+        testFinishCallback();
     })
-    testFinishCallback();
-  })
 }, 60000)
