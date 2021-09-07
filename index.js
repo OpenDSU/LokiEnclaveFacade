@@ -22,7 +22,7 @@ function DefaultEnclave(rootFolder) {
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for DefaultEnclave");
     }
-    let db = new loki(path.join(rootFolder, DEFAULT_NAME), {
+    let db = new loki(rootFolder, {
         adapter: adapter,
         autoload: true,
         autoloadCallback: initialized.bind(this),
