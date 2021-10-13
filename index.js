@@ -15,9 +15,17 @@ let filterOperationsMap = {
 }
 
 function DefaultEnclave(rootFolder) {
-    require("opendsu"); // for error wrapper
+    const openDSU = require("opendsu");
+    const keySSISpace = openDSU.loadAPI("keyssi")
+    const w3cDID = openDSU.loadAPI("w3cdid")
+    const CryptoSkills = w3cDID.CryptographicSkills;
+
     const DEFAULT_NAME = "defaultEnclave";
     const path = require("path");
+    const KEY_SSIS_TABLE = "keyssis";
+    const SEED_SSIS_TABLE = "seedssis";
+    const DIDS_PRIVATE_KEYS = "dids_private";
+
     const AUTOSAVE_INTERVAL = 10000;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for DefaultEnclave");
@@ -116,11 +124,11 @@ function DefaultEnclave(rootFolder) {
 
     function __parseQuery(filterConditions) {
         let lokiQuery = {}
-        if (typeof filterConditions === "undefined") {
+        if (!filterConditions) {
             return lokiQuery;
         }
 
-        filterConditions.forEach(condition =>{
+        filterConditions.forEach(condition => {
             const splitCondition = condition.split(" ");
             const field = splitCondition[0];
             const operator = splitCondition[1];
@@ -163,6 +171,10 @@ function DefaultEnclave(rootFolder) {
             max = Infinity;
         }
 
+        if (!max) {
+            max = Infinity;
+        }
+
         const sortingField = __getSortingField(filterConditions);
         filterConditions = __parseQuery(filterConditions);
 
@@ -186,7 +198,58 @@ function DefaultEnclave(rootFolder) {
         callback(null, result);
     }
 
+    this.getAllRecords = (forDID, tableName, callback) => {
+        let table = db.getCollection(tableName);
+        if (!table) {
+            return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
+        }
+
+        let results;
+        try {
+            results = table.find();
+        } catch (err) {
+            return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
+        }
+
+
+        callback(null, results);
+    };
+
     bindAutoPendingFunctions(this);
+
+    const READ_WRITE_KEY_TABLE = "KeyValueTable";
+
+    this.writeKey = (forDID, key, value, callback) => {
+        let valueObject = {
+            type: typeof value,
+            value: value
+        };
+
+        if (typeof value === "object") {
+            if (Buffer.isBuffer(value)) {
+                valueObject = {
+                    type: "buffer",
+                    value: value.toString()
+                }
+            } else {
+                valueObject = {
+                    type: "object",
+                    value: JSON.stringify(value)
+                }
+            }
+        }
+        this.insertRecord(forDID, READ_WRITE_KEY_TABLE, key, valueObject, callback);
+    }
+
+    this.readKey = (forDID, key, callback) => {
+        this.getRecord(forDID, READ_WRITE_KEY_TABLE, key, (err, record) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`Failed to read key ${key}`, err));
+            }
+
+            callback(undefined, record);
+        })
+    }
 
 //------------------ queue -----------------
     let self = this;
@@ -232,6 +295,209 @@ function DefaultEnclave(rootFolder) {
         return self.deleteRecord(forDID, queueName, hash, callback)
     }
 
+    //------------------ KeySSIs -----------------
+    const getCapableOfSigningKeySSI = (keySSI, callback) => {
+        if (typeof keySSI === "undefined") {
+            return callback(Error(`A SeedSSI should be specified.`));
+        }
+
+        if (typeof keySSI === "string") {
+            try {
+                keySSI = keySSISpace.parse(keySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${keySSI}`, e))
+            }
+        }
+
+        this.getRecord(undefined, KEY_SSIS_TABLE, keySSI.getIdentifier(), (err, record) => {
+            if (err) {
+                return callback(createOpenDSUErrorWrapper(`No capable of signing keySSI found for keySSI ${keySSI.getIdentifier()}`, err));
+            }
+
+            let capableOfSigningKeySSI;
+            try {
+                capableOfSigningKeySSI = keySSISpace.parse(record.capableOfSigningKeySSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${record.capableOfSigningKeySSI}`, e))
+            }
+
+            callback(undefined, capableOfSigningKeySSI);
+        });
+    };
+
+    this.storeSeedSSI = (forDID, seedSSI, alias, callback) => {
+        if (typeof seedSSI === "string") {
+            try {
+                seedSSI = keySSISpace.parse(seedSSI);
+            } catch (e) {
+                return callback(createOpenDSUErrorWrapper(`Failed to parse keySSI ${seedSSI}`, e))
+            }
+        }
+
+        const keySSIIdentifier = seedSSI.getIdentifier();
+
+        const registerDerivedKeySSIs = (derivedKeySSI) => {
+            this.insertRecord(forDID, KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                try {
+                    derivedKeySSI = derivedKeySSI.derive();
+                } catch (e) {
+                    return callback();
+                }
+
+                registerDerivedKeySSIs(derivedKeySSI);
+            });
+        }
+
+        this.insertRecord(forDID, SEED_SSIS_TABLE, alias, {seedSSI: keySSIIdentifier}, (err) => {
+            if (err) {
+                return callback(err);
+            }
+
+            return registerDerivedKeySSIs(seedSSI);
+        })
+    }
+
+    this.signForKeySSI = (forDID, keySSI, hash, callback) => {
+        getCapableOfSigningKeySSI(keySSI, (err, capableOfSigningKeySSI) => {
+            if (err) {
+                return callback(err);
+            }
+            if (typeof capableOfSigningKeySSI === "undefined") {
+                return callback(Error(`The provided SSI does not grant writing rights`));
+            }
+
+            capableOfSigningKeySSI.sign(hash, callback);
+        });
+    }
+
+    //------------------ DIDs -----------------
+    const getPrivateInfoForDID = (did, callback) => {
+        this.getRecord(undefined, DIDS_PRIVATE_KEYS, did, (err, record) => {
+            if (err) {
+                return callback(err);
+            }
+
+            const privateKeysAsBuff = record.privateKeys.map(privateKey => {
+                if (privateKey) {
+                    return $$.Buffer.from(privateKey)
+                }
+
+                return privateKey;
+            });
+            callback(undefined, privateKeysAsBuff);
+        });
+    };
+
+    const __ensureAreDIDDocumentsThenExecute = (did, fn, callback) => {
+        if (typeof did === "string") {
+            return w3cDID.resolveDID(did, (err, didDocument) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                fn(didDocument, callback);
+            })
+        }
+
+        fn(did, callback);
+    }
+
+    this.storeDID = (forDID, storedDID, privateKeys, callback) => {
+        this.getRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, (err, res) => {
+            if (err || !res) {
+                return this.insertRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, {privateKeys: privateKeys}, callback);
+            }
+
+            privateKeys.forEach(privateKey => {
+                res.privateKeys.push(privateKey);
+            })
+            this.updateRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, res, callback);
+        });
+    }
+
+    this.signForDID = (forDID, didThatIsSigning, hash, callback) => {
+        const __signForDID = (didThatIsSigning, callback) => {
+            getPrivateInfoForDID(didThatIsSigning.getIdentifier(),  (err, privateKeys) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
+                }
+
+                const signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+                callback(undefined, signature);
+            });
+        }
+
+        __ensureAreDIDDocumentsThenExecute(didThatIsSigning, __signForDID, callback);
+    }
+
+    this.verifyForDID = (forDID, didThatIsVerifying, hash, signature, callback) => {
+        const __verifyForDID = (didThatIsVerifying, callback) => {
+            didThatIsVerifying.getPublicKey("pem", (err, publicKey) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to read public key for did ${didThatIsVerifying.getIdentifier()}`, err));
+                }
+
+                const verificationResult = CryptoSkills.applySkill(didThatIsVerifying.getMethodName(), CryptoSkills.NAMES.VERIFY, hash, publicKey, $$.Buffer.from(signature));
+                callback(undefined, verificationResult);
+            });
+        }
+
+        __ensureAreDIDDocumentsThenExecute(didThatIsVerifying, __verifyForDID, callback);
+    }
+
+    this.encryptMessage = (forDID, didFrom, didTo, message, callback) => {
+        const __encryptMessage = () => {
+            getPrivateInfoForDID(didFrom.getIdentifier(), (err, privateKeys) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didFrom.getIdentifier()}`, err));
+                }
+
+                CryptoSkills.applySkill(didFrom.getMethodName(), CryptoSkills.NAMES.ENCRYPT_MESSAGE, privateKeys, didFrom, didTo, message, callback);
+            });
+        }
+        if (typeof didFrom === "string") {
+            w3cDID.resolveDID(didFrom, (err, didDocument) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                didFrom = didDocument;
+
+
+                if (typeof didTo === "string") {
+                    w3cDID.resolveDID(didTo, (err, didDocument) => {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        didTo = didDocument;
+                        __encryptMessage();
+                    })
+                } else {
+                    __encryptMessage();
+                }
+            })
+        } else {
+            __encryptMessage();
+        }
+    }
+
+    this.decryptMessage = (forDID, didTo, encryptedMessage, callback) => {
+        const __decryptMessage = (didTo, callback) => {
+            getPrivateInfoForDID(didTo.getIdentifier(), (err, privateKeys) => {
+                if (err) {
+                    return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didTo.getIdentifier()}`, err));
+                }
+
+                CryptoSkills.applySkill(didTo.getMethodName(), CryptoSkills.NAMES.DECRYPT_MESSAGE, privateKeys, didTo, encryptedMessage, callback);
+            });
+        }
+        __ensureAreDIDDocumentsThenExecute(didTo, __decryptMessage, callback);
+    };
 }
 
 function initialized() {
