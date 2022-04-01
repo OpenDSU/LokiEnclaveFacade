@@ -1,5 +1,6 @@
 const loki = require("./lib/lokijs/src/lokijs.js");
-const lfsa = require("./lib/lokijs/src/loki-fs-structured-adapter.js");
+const lfsa = require("./lib/lokijs/src/loki-fs-sync-adapter.js");
+const lfssa = require("./lib/lokijs/src/loki-fs-structured-adapter");
 
 const adapter = new lfsa();
 let bindAutoPendingFunctions = require("../opendsu/utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
@@ -38,6 +39,10 @@ function DefaultEnclave(rootFolder) {
         autosaveInterval: AUTOSAVE_INTERVAL
     });
 
+    this.refresh = function (callback) {
+        db.loadDatabaseInternal(undefined, callback);
+    }
+
     this.count = function (tableName, callback) {
         let table = db.getCollection(tableName);
         if (!table) {
@@ -72,7 +77,7 @@ function DefaultEnclave(rootFolder) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
-        db.saveDatabase(callback)
+        db.saveDatabaseInternal(callback)
     }
 
     this.updateRecord = function (forDID, tableName, pk, record, callback) {
@@ -86,7 +91,7 @@ function DefaultEnclave(rootFolder) {
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err));
         }
-        db.saveDatabase(callback)
+        db.saveDatabaseInternal(callback)
     }
 
     this.deleteRecord = function (forDID, tableName, pk, callback) {
@@ -104,7 +109,7 @@ function DefaultEnclave(rootFolder) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
-        db.saveDatabase(callback)
+        db.saveDatabaseInternal(callback)
     }
 
     this.getRecord = function (forDID, tableName, pk, callback) {
@@ -276,7 +281,7 @@ function DefaultEnclave(rootFolder) {
             onlyFirstN = undefined;
         }
 
-        self.filter(forDID, queueName, {}, "insertTime " + sortAfterInsertTime, onlyFirstN, (err, result) => {
+        self.filter(forDID, queueName, undefined,  sortAfterInsertTime, onlyFirstN, (err, result) => {
             if (err) {
                 return callback(err);
             }
