@@ -18,7 +18,6 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         let dbPath = path.join(folder, "test_db");
         // fs.mkdirSync(dbPath, {recursive: true});
         let testDb = getEnclaveDB(dbPath);
-        const cloneDb = getEnclaveDB(dbPath);
 
         for (let i = 0; i < numberOfREcords; i++) {
             let pk = Math.floor(Math.random() * 5000);
@@ -38,6 +37,8 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
 
         nr = await $$.promisify(testDb.count)(TABLE_NAME)
         assert.equal(nr, numberOfREcords + 1);
+
+        const cloneDb = getEnclaveDB(dbPath);
 
         nr = await $$.promisify(cloneDb.count)(TABLE_NAME);
         assert.equal(nr, numberOfREcords + 1);

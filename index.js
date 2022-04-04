@@ -2,7 +2,7 @@ const loki = require("./lib/lokijs/src/lokijs.js");
 const lfsa = require("./lib/lokijs/src/loki-fs-sync-adapter.js");
 const lfssa = require("./lib/lokijs/src/loki-fs-structured-adapter");
 
-const adapter = new lfsa();
+const adapter = new lfssa();
 let bindAutoPendingFunctions = require("../opendsu/utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
 let filterOperationsMap = {
@@ -15,7 +15,7 @@ let filterOperationsMap = {
     "like": "$regex"
 }
 
-function DefaultEnclave(rootFolder) {
+function DefaultEnclave(rootFolder, autosaveInterval) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
@@ -27,7 +27,8 @@ function DefaultEnclave(rootFolder) {
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
 
-    const AUTOSAVE_INTERVAL = 10000;
+    const AUTOSAVE_INTERVAL = 1000;
+    autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for DefaultEnclave");
     }
@@ -36,7 +37,7 @@ function DefaultEnclave(rootFolder) {
         autoload: true,
         autoloadCallback: initialized.bind(this),
         autosave: true,
-        autosaveInterval: AUTOSAVE_INTERVAL
+        autosaveInterval: autosaveInterval
     });
 
     this.refresh = function (callback) {
@@ -77,7 +78,9 @@ function DefaultEnclave(rootFolder) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
-        db.saveDatabaseInternal(callback)
+        setTimeout(() => {
+            db.saveDatabaseInternal(callback)
+        }, autosaveInterval)
     }
 
     this.updateRecord = function (forDID, tableName, pk, record, callback) {
@@ -91,7 +94,9 @@ function DefaultEnclave(rootFolder) {
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err));
         }
-        db.saveDatabaseInternal(callback)
+        setTimeout(() => {
+            db.saveDatabaseInternal(callback)
+        }, autosaveInterval)
     }
 
     this.deleteRecord = function (forDID, tableName, pk, callback) {
@@ -109,7 +114,9 @@ function DefaultEnclave(rootFolder) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
-        db.saveDatabaseInternal(callback)
+        setTimeout(() => {
+            db.saveDatabaseInternal(callback)
+        }, autosaveInterval)
     }
 
     this.getRecord = function (forDID, tableName, pk, callback) {
@@ -281,7 +288,7 @@ function DefaultEnclave(rootFolder) {
             onlyFirstN = undefined;
         }
 
-        self.filter(forDID, queueName, undefined,  sortAfterInsertTime, onlyFirstN, (err, result) => {
+        self.filter(forDID, queueName, undefined, sortAfterInsertTime, onlyFirstN, (err, result) => {
             if (err) {
                 return callback(err);
             }
@@ -426,7 +433,7 @@ function DefaultEnclave(rootFolder) {
 
     this.signForDID = (forDID, didThatIsSigning, hash, callback) => {
         const __signForDID = (didThatIsSigning, callback) => {
-            getPrivateInfoForDID(didThatIsSigning.getIdentifier(),  (err, privateKeys) => {
+            getPrivateInfoForDID(didThatIsSigning.getIdentifier(), (err, privateKeys) => {
                 if (err) {
                     return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
                 }
