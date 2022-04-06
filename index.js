@@ -1,8 +1,8 @@
 const loki = require("./lib/lokijs/src/lokijs.js");
 const lfsa = require("./lib/lokijs/src/loki-fs-sync-adapter.js");
-const lfssa = require("./lib/lokijs/src/loki-fs-structured-adapter");
+// const lfssa = require("./lib/lokijs/src/loki-fs-structured-adapter");
 
-const adapter = new lfssa();
+const adapter = new lfsa();
 let bindAutoPendingFunctions = require("../opendsu/utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
 let filterOperationsMap = {
