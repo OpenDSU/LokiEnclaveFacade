@@ -38,11 +38,6 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         nr = await $$.promisify(testDb.count)(TABLE_NAME)
         assert.equal(nr, numberOfREcords + 1);
 
-        const cloneDb = getEnclaveDB(dbPath);
-
-        nr = await $$.promisify(cloneDb.count)(TABLE_NAME);
-        assert.equal(nr, numberOfREcords + 1);
-
         let data =await $$.promisify(testDb.getRecord)(DID, TABLE_NAME, "newPk");
         assert.equal(data.name, "test_new");
 
@@ -52,10 +47,6 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         assert.equal(data, null);
 
         data = await $$.promisify(testDb.getRecord)(DID, TABLE_NAME, "newPk");
-        assert.equal(data.id, "someID");
-
-        await $$.promisify(cloneDb.refresh)();
-        data = await $$.promisify(cloneDb.getRecord)(DID, TABLE_NAME, "newPk");
         assert.equal(data.id, "someID");
 
         try {
@@ -84,10 +75,6 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         }
 
         nr = await $$.promisify(testDb.count)(TABLE_NAME)
-        assert.equal(nr, numberOfREcords);
-
-        await $$.promisify(cloneDb.refresh)();
-        nr = await $$.promisify(cloneDb.count)(TABLE_NAME)
         assert.equal(nr, numberOfREcords);
 
         data = await $$.promisify(testDb.filter)(DID, TABLE_NAME)

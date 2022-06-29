@@ -78,9 +78,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
-        setTimeout(() => {
-            db.saveDatabaseInternal(callback)
-        }, autosaveInterval)
+        callback();
     }
 
     this.updateRecord = function (forDID, tableName, pk, record, callback) {
@@ -94,9 +92,8 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err));
         }
-        setTimeout(() => {
-            db.saveDatabaseInternal(callback)
-        }, autosaveInterval)
+
+        callback();
     }
 
     this.deleteRecord = function (forDID, tableName, pk, callback) {
@@ -114,9 +111,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
-        setTimeout(() => {
-            db.saveDatabaseInternal(callback)
-        }, autosaveInterval)
+        callback();
     }
 
     this.getRecord = function (forDID, tableName, pk, callback) {
