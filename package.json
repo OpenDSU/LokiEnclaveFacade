@@ -1,22 +1,22 @@
 {
-  "name": "defaultenclave",
-  "version": "1.0.0",
-  "description": "Default Enclave for OpenDSU",
-  "main": "index.js",
-  "directories": {
-    "lib": "lib"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/OpenDSU/DefaultEnclave.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/OpenDSU/DefaultEnclave/issues"
-  },
-  "homepage": "https://github.com/OpenDSU/DefaultEnclave#readme"
+    "name": "defaultenclave",
+    "version": "v1.0.1",
+    "description": "Default Enclave for OpenDSU",
+    "main": "index.js",
+    "directories": {
+        "lib": "lib"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/OpenDSU/DefaultEnclave.git"
+    },
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/OpenDSU/DefaultEnclave/issues"
+    },
+    "homepage": "https://github.com/OpenDSU/DefaultEnclave#readme"
 }
