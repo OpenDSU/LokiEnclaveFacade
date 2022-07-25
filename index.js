@@ -2,6 +2,7 @@ const loki = require("./lib/lokijs/src/lokijs.js");
 const lfsa = require("./lib/lokijs/src/loki-fs-sync-adapter.js");
 // const lfssa = require("./lib/lokijs/src/loki-fs-structured-adapter");
 
+const TABLE_NOT_FOUND_ERROR_CODE = 100;
 const adapter = new lfsa();
 let bindAutoPendingFunctions = require("../opendsu/utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
@@ -99,7 +100,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     this.deleteRecord = function (forDID, tableName, pk, callback) {
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
+            return callback();
         }
         const record = table.findOne({'pk': pk});
         if (!record) {
@@ -117,7 +118,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     this.getRecord = function (forDID, tableName, pk, callback) {
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
+            return callback();
         }
         let result;
         try {
@@ -187,7 +188,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
 
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
+            return callback();
         }
         let direction = false;
         if (sort === "desc") {
@@ -208,7 +209,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     this.getAllRecords = (forDID, tableName, callback) => {
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
+            return callback();
         }
 
         let results;
@@ -217,7 +218,6 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
         }
-
 
         callback(null, results);
     };
