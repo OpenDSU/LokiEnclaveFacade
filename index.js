@@ -272,7 +272,6 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     }
 
     this.listQueue = function (forDID, queueName, sortAfterInsertTime, onlyFirstN, callback) {
-
         if (typeof sortAfterInsertTime === "function") {
             callback = sortAfterInsertTime;
             sortAfterInsertTime = "asc";
@@ -287,9 +286,14 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
             if (err) {
                 return callback(err);
             }
+
+            if (typeof result === "undefined") {
+                return callback();
+            }
+
             result = result.map(item => {
                 return item.pk
-            })
+            });
             return callback(null, result);
         })
     }
