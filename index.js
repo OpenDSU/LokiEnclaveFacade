@@ -68,18 +68,18 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
 
     this.insertRecord = function (forDID, tableName, pk, record, callback) {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
-        const foundRecord = table.findOne({'pk': pk});
+        const foundRecord = table.findOne({ 'pk': pk });
         if (foundRecord) {
             return callback(createOpenDSUErrorWrapper(`A record with pk ${pk} already exists in ${tableName}`))
         }
-
+        let result;
         try {
-            table.insert({"pk": pk, ...record, "did": forDID, "__timestamp": Date.now()});
+            result = table.insert({ "pk": pk, ...record, "did": forDID, "__timestamp": Date.now() });
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
-        callback();
+        callback(null, result);
     }
 
     this.updateRecord = function (forDID, tableName, pk, record, callback) {
@@ -88,13 +88,14 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         for (let prop in record) {
             doc[prop] = record[prop];
         }
+        let result;
         try {
-            table.update(doc);
+            result = table.update(doc);
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err));
         }
 
-        callback();
+        callback(null, result);
     }
 
     this.deleteRecord = function (forDID, tableName, pk, callback) {
@@ -102,17 +103,18 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         if (!table) {
             return callback();
         }
-        const record = table.findOne({'pk': pk});
+        const record = table.findOne({ 'pk': pk });
         if (!record) {
             return callback(createOpenDSUErrorWrapper(`Couldn't find a record for pk ${pk} in ${tableName}`))
         }
+        let result;
         try {
-            table.remove(record);
+            result = table.remove(record);
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
-        callback();
+        callback(null, result);
     }
 
     this.getRecord = function (forDID, tableName, pk, callback) {
@@ -122,7 +124,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         }
         let result;
         try {
-            result = table.findObject({'pk': pk});
+            result = table.findObject({ 'pk': pk });
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Could not find object with pk ${pk}`, err));
         }
@@ -258,7 +260,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         })
     }
 
-//------------------ queue -----------------
+    //------------------ queue -----------------
     let self = this;
     this.addInQueue = function (forDID, queueName, encryptedObject, callback) {
         let queue = db.getCollection(queueName) || db.addCollection(queueName);
@@ -272,6 +274,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     }
 
     this.listQueue = function (forDID, queueName, sortAfterInsertTime, onlyFirstN, callback) {
+
         if (typeof sortAfterInsertTime === "function") {
             callback = sortAfterInsertTime;
             sortAfterInsertTime = "asc";
@@ -286,14 +289,9 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
             if (err) {
                 return callback(err);
             }
-
-            if (typeof result === "undefined") {
-                return callback();
-            }
-
             result = result.map(item => {
                 return item.pk
-            });
+            })
             return callback(null, result);
         })
     }
@@ -348,7 +346,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         const keySSIIdentifier = seedSSI.getIdentifier();
 
         const registerDerivedKeySSIs = (derivedKeySSI) => {
-            this.insertRecord(forDID, KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
+            this.insertRecord(forDID, KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), { capableOfSigningKeySSI: keySSIIdentifier }, (err) => {
                 if (err) {
                     return callback(err);
                 }
@@ -363,7 +361,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
             });
         }
 
-        this.insertRecord(forDID, SEED_SSIS_TABLE, alias, {seedSSI: keySSIIdentifier}, (err) => {
+        this.insertRecord(forDID, SEED_SSIS_TABLE, alias, { seedSSI: keySSIIdentifier }, (err) => {
             if (err) {
                 return callback(err);
             }
@@ -420,7 +418,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     this.storeDID = (forDID, storedDID, privateKeys, callback) => {
         this.getRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, (err, res) => {
             if (err || !res) {
-                return this.insertRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, {privateKeys: privateKeys}, callback);
+                return this.insertRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, { privateKeys: privateKeys }, callback);
             }
 
             privateKeys.forEach(privateKey => {
