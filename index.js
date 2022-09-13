@@ -190,7 +190,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
 
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback();
+            return callback(Error(`Table ${tableName} does not exist.`));
         }
         let direction = false;
         if (sort === "desc") {
@@ -289,6 +289,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
             if (err) {
                 return callback(err);
             }
+
             result = result.map(item => {
                 return item.pk
             })
