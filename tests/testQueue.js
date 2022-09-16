@@ -21,7 +21,7 @@ assert.callback("Enclave Queue test", (testFinishCallback) => {
         age: 10 + i * 5,
         id: Math.floor(Math.random() * 1000)
       })
-      assert.equal(insertResult, undefined);
+      assert.notEqual(insertResult, undefined);
     }
 
     let sizeResult = await $$.promisify(testQ.queueSize)("", "queueTable");
@@ -31,7 +31,7 @@ assert.callback("Enclave Queue test", (testFinishCallback) => {
       name: "test_new",
       id: Math.floor(Math.random() * 1000)
     })
-    assert.equal(insertResult, undefined);
+    assert.notEqual(insertResult, undefined);
     sizeResult = await $$.promisify(testQ.queueSize)("", "queueTable");
     assert.equal(sizeResult, numberOfRecords + 1);
 
@@ -44,7 +44,7 @@ assert.callback("Enclave Queue test", (testFinishCallback) => {
     assert.equal(gueueObject.name, "test 1");
 
     let deleteObjectResult = await $$.promisify(testQ.deleteObjectFromQueue)("", "queueTable", resultList[1]);
-    assert.equal(deleteObjectResult, undefined);
+    assert.notEqual(deleteObjectResult, undefined);
 
     gueueObject = await $$.promisify(testQ.getObjectFromQueue)("", "queueTable", resultList[1]);
     assert.equal(gueueObject, null);

@@ -152,7 +152,8 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     function __getSortingField(filterConditions) {
         let sortingField = "__timestamp";
         if (filterConditions && filterConditions.length) {
-            sortingField = filterConditions[0][0];
+            const splitCondition = filterConditions[0].split(" ");
+            sortingField = splitCondition[0];
         }
 
         return sortingField;
