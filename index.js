@@ -195,7 +195,9 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval) {
 
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback(Error(`Table ${tableName} does not exist.`));
+            const err = Error(`Table ${tableName} does not exist.`);
+            err.code = 404;
+            return callback(err);
         }
         let direction = false;
         if (sort === "desc") {
