@@ -1,5 +1,5 @@
 {
-    "name": "defaultenclave",
+    "name": "LokiEnclaveFacade",
     "version": "v1.0.2",
     "description": "Default Enclave for OpenDSU",
     "main": "index.js",
@@ -11,12 +11,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/OpenDSU/DefaultEnclave.git"
+        "url": "git+https://github.com/OpenDSU/LokiEnclaveFacade.git"
     },
     "author": "",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/OpenDSU/DefaultEnclave/issues"
+        "url": "https://github.com/OpenDSU/LokiEnclaveFacade/issues"
     },
-    "homepage": "https://github.com/OpenDSU/DefaultEnclave#readme"
+    "homepage": "https://github.com/OpenDSU/LokiEnclaveFacade#readme"
 }

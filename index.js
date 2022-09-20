@@ -15,14 +15,14 @@ let filterOperationsMap = {
     "like": "$regex"
 }
 
-function DefaultEnclave(rootFolder, autosaveInterval) {
+function LokiEnclaveFacade(rootFolder, autosaveInterval) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
     const utils = openDSU.loadAPI("utils");
     const CryptoSkills = w3cDID.CryptographicSkills;
     const logger = $$.getLogger("LokiEnclaveFacade", "lokiEnclaveFacade");
-    const DEFAULT_NAME = "defaultEnclave";
+    const DEFAULT_NAME = "LokiEnclaveFacade";
     const path = require("path");
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
@@ -30,7 +30,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     const AUTOSAVE_INTERVAL = 100;
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
-        throw Error("Root folder was not specified for DefaultEnclave");
+        throw Error("Root folder was not specified for LokiEnclaveFacade");
     }
     let db = new loki(rootFolder, {
         adapter: adapter,
@@ -519,4 +519,4 @@ function initialized() {
     this.finishInitialisation();
 }
 
-module.exports = DefaultEnclave;
+module.exports = LokiEnclaveFacade;
