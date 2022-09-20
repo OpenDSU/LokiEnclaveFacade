@@ -27,7 +27,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
-    const AUTOSAVE_INTERVAL = 10;
+    const AUTOSAVE_INTERVAL = 100;
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for DefaultEnclave");
