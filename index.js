@@ -4,7 +4,6 @@ const lfsa = require("./lib/lokijs/src/loki-fs-sync-adapter.js");
 
 const TABLE_NOT_FOUND_ERROR_CODE = 100;
 const adapter = new lfsa();
-let bindAutoPendingFunctions = require("../opendsu/utils/BindAutoPendingFunctions").bindAutoPendingFunctions;
 
 let filterOperationsMap = {
     "!=": "$ne",
@@ -20,15 +19,15 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
+    const utils = openDSU.loadAPI("utils");
     const CryptoSkills = w3cDID.CryptographicSkills;
-
+    const logger = $$.getLogger("LokiEnclaveFacade", "lokiEnclaveFacade");
     const DEFAULT_NAME = "defaultEnclave";
     const path = require("path");
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
-
-    const AUTOSAVE_INTERVAL = 1000;
+    const AUTOSAVE_INTERVAL = 10;
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for DefaultEnclave");
@@ -38,7 +37,12 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         autoload: true,
         autoloadCallback: initialized.bind(this),
         autosave: true,
-        autosaveInterval: autosaveInterval
+        autosaveInterval: autosaveInterval,
+        autosaveCallback: function (err) {
+            if (err) {
+                logger.error(`Failed to save db on disk.`)
+            }
+        }
     });
 
     this.refresh = function (callback) {
@@ -225,7 +229,7 @@ function DefaultEnclave(rootFolder, autosaveInterval) {
         callback(null, results);
     };
 
-    bindAutoPendingFunctions(this);
+    utils.bindAutoPendingFunctions(this);
 
     const READ_WRITE_KEY_TABLE = "KeyValueTable";
 
