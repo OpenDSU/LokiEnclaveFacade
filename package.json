@@ -1,6 +1,6 @@
 {
     "name": "LokiEnclaveFacade",
-    "version": "v1.0.2",
+    "version": "v1.0.3",
     "description": "Default Enclave for OpenDSU",
     "main": "index.js",
     "directories": {
