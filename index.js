@@ -40,7 +40,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval) {
         autosaveInterval: autosaveInterval,
         autosaveCallback: function (err) {
             if (err) {
-                logger.error(`Failed to save db on disk.`)
+                logger.error(`Failed to save db on disk.`, err)
             }
         }
     });
