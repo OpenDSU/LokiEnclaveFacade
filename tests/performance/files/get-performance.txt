@@ -1,0 +1,26 @@
+STRUCTURED Adaptor
+
+100 000 records
+["4 ms","4 ms","3 ms","1 ms","0 ms","0 ms","0 ms","1 ms","0 ms","0 ms"]
+DEBUG    0x00  2023-05-24T16:58:28.160Z overwrite-r Logger      Max time: 4 ms
+DEBUG    0x00  2023-05-24T16:58:28.160Z overwrite-r Logger      Average times: 1.3 ms
+Retrieved all records in 2ms
+
+200 000 records
+["7 ms","7 ms","1 ms","1 ms","1 ms","1 ms","1 ms","1 ms","2 ms","1 ms"]
+DEBUG    0x00  2023-05-24T17:00:51.513Z overwrite-r Logger      Max time: 7 ms
+DEBUG    0x00  2023-05-24T17:00:51.513Z overwrite-r Logger      Average time: 2.3 ms
+Retrieved all records in 6ms
+
+
+FS Adaptor
+100 000 records
+["4 ms","4 ms","3 ms","0 ms","1 ms","0 ms","0 ms","1 ms","0 ms","0 ms"]
+DEBUG    0x00  2023-05-24T17:13:23.612Z overwrite-r Logger      Max time: 4 ms
+DEBUG    0x00  2023-05-24T17:13:23.612Z overwrite-r Logger      Average time: 1.3 ms
+Retrieved all records in 5ms
+200 000 records
+["8 ms","7 ms","1 ms","1 ms","1 ms","1 ms","1 ms","1 ms","1 ms","1 ms"]
+DEBUG    0x00  2023-05-24T17:15:14.562Z overwrite-r Logger      Max time: 8 ms
+DEBUG    0x00  2023-05-24T17:15:14.562Z overwrite-r Logger      Average time: 2.3 ms
+Retrieved all records in 7ms
