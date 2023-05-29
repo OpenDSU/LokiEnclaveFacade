@@ -1,9 +1,7 @@
+const Adaptors = require("./adaptors.js");
 const loki = require("./lib/lokijs/src/lokijs.js");
-const lfsa = require("./lib/lokijs/src/loki-fs-sync-adapter.js");
-// const lfssa = require("./lib/lokijs/src/loki-fs-structured-adapter");
 
 const TABLE_NOT_FOUND_ERROR_CODE = 100;
-const adapter = new lfsa();
 
 let filterOperationsMap = {
     "!=": "$ne",
@@ -15,7 +13,7 @@ let filterOperationsMap = {
     "like": "$regex"
 }
 
-function LokiEnclaveFacade(rootFolder, autosaveInterval) {
+function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     const openDSU = require("opendsu");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
@@ -28,6 +26,8 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval) {
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
     const AUTOSAVE_INTERVAL = 100;
+    const adapter = adaptorConstructorFunction === undefined ? new Adaptors.STRUCTURED() : new adaptorConstructorFunction();
+    
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for LokiEnclaveFacade");
@@ -68,6 +68,15 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval) {
         return db.listCollections().map(collection => {
             return collection.name
         })
+    }
+
+    this.createCollection = function(forDID, tableName, indicesList){
+        db.addCollection(tableName, {indices: indicesList})
+    }
+
+    this.ensureIndex = function(forDID, tableName, property){
+        let table = db.getCollection(tableName) || db.addCollection(tableName);
+        table.ensureIndex(property, true);
     }
 
     this.insertRecord = function (forDID, tableName, pk, record, callback) {

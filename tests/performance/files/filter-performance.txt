@@ -1,0 +1,11 @@
+FS Adaptor 
+100 000 records
+Retrieved 49999 records in 14ms 
+200 000 records
+Retrieved 99999 records in 15ms
+
+Structured Adaptor
+100 000 records
+Retrieved 49999 records in 8ms
+200 000
+Retrieved 99999 records in 16ms
