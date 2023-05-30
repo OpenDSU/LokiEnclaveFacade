@@ -43,19 +43,19 @@ assert.callback("Performance - Enclave db insert test", (testFinishCallback) => 
         let time = new Date().getTime() - start;
         console.log(`No indices - Retrieved ${filterRecords.length} records in ${time}ms`);
         
-        testDb.ensureIndex("", "testTable", "age");
+        testDb.addIndex("", "testTable", "age");
         start = new Date().getTime();
         filterRecords = await $$.promisify(testDb.filter)("", "testTable", ["age > 50", "account <= 100000", "prob > 0.7"]);
         time = new Date().getTime() - start;
         console.log(`Index on age - Retrieved ${filterRecords.length} records in ${time}ms`);
 
-        testDb.ensureIndex("", "testTable", "account");
+        testDb.addIndex("", "testTable", "account");
         start = new Date().getTime();
         filterRecords = await $$.promisify(testDb.filter)("", "testTable", ["age > 50", "account <= 100000", "prob > 0.7"]);
         time = new Date().getTime() - start;
         console.log(`Index on age & account- Retrieved ${filterRecords.length} records in ${time}ms`);
 
-        testDb.ensureIndex("", "testTable", "prob");
+        testDb.addIndex("", "testTable", "prob");
         start = new Date().getTime();
         filterRecords = await $$.promisify(testDb.filter)("", "testTable", ["age > 50", "account <= 100000", "prob > 0.7"]);
         time = new Date().getTime() - start;

@@ -74,7 +74,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         db.addCollection(tableName, {indices: indicesList})
     }
 
-    this.ensureIndex = function(forDID, tableName, property){
+    this.addIndex = function(forDID, tableName, property){
         let table = db.getCollection(tableName) || db.addCollection(tableName);
         table.ensureIndex(property, true);
     }
