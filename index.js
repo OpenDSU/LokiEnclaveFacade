@@ -530,4 +530,5 @@ function initialized() {
     this.finishInitialisation();
 }
 
+LokiEnclaveFacade.prototype.Adaptors = Adaptors;
 module.exports = LokiEnclaveFacade;
