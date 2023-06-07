@@ -278,11 +278,19 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
     //------------------ queue -----------------
     let self = this;
-    this.addInQueue = function (forDID, queueName, encryptedObject, callback) {
+    this.addInQueue = function (forDID, queueName, encryptedObject, ensureUniqueness, callback) {
+        if(typeof ensureUniqueness === "function"){
+            callback = ensureUniqueness;
+            ensureUniqueness = false;
+        }
         let queue = db.getCollection(queueName) || db.addCollection(queueName);
         const crypto = require("opendsu").loadApi("crypto");
         const hash = crypto.sha256(encryptedObject);
-        self.insertRecord(forDID, queueName, hash, encryptedObject, callback);
+        let pk = hash;
+        if (ensureUniqueness) {
+            pk = `${hash}_${Date.now()}`;
+        }
+        self.insertRecord(forDID, queueName, pk, encryptedObject, (err) => callback(err, pk));
     }
 
     this.queueSize = function (forDID, queueName, callback) {
@@ -290,7 +298,6 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     }
 
     this.listQueue = function (forDID, queueName, sortAfterInsertTime, onlyFirstN, callback) {
-
         if (typeof sortAfterInsertTime === "function") {
             callback = sortAfterInsertTime;
             sortAfterInsertTime = "asc";
@@ -303,6 +310,10 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
         self.filter(forDID, queueName, undefined, sortAfterInsertTime, onlyFirstN, (err, result) => {
             if (err) {
+                if (err.code === 404) {
+                    return callback(undefined, []);
+                }
+
                 return callback(err);
             }
 
