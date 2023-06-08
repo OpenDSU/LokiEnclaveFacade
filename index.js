@@ -288,7 +288,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         const hash = crypto.sha256(encryptedObject);
         let pk = hash;
         if (ensureUniqueness) {
-            pk = `${hash}_${Date.now()}`;
+            pk = `${hash}_${Date.now()}_${crypto.generateRandom(10).toString("base64")}`;
         }
         self.insertRecord(forDID, queueName, pk, encryptedObject, (err) => callback(err, pk));
     }
