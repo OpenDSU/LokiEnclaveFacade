@@ -118,7 +118,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         }
         const record = table.findOne({ 'pk': pk });
         if (!record) {
-            return callback(createOpenDSUErrorWrapper(`Couldn't find a record for pk ${pk} in ${tableName}`))
+            return callback(undefined);
         }
         let result;
         try {
