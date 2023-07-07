@@ -87,7 +87,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         }
         let result;
         try {
-            result = table.insert({ "pk": pk, ...record, "did": forDID, "__timestamp": Date.now() });
+            result = table.insert({ "pk": pk, ...record, "did": forDID, "__timestamp": record.__timestamp || Date.now() });
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
