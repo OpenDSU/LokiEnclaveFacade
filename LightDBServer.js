@@ -69,7 +69,7 @@ function LightDBServer({rootFolder, port, host}, callback) {
         }
 
         process.env.LIGHT_DB_SERVER_ADDRESS = `http://${host}:${port}`;
-        registerEndpoints(callback);
+        registerEndpoints();
     }
 
     function bootup(){
