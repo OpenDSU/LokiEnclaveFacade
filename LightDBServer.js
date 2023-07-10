@@ -9,13 +9,15 @@ process.on('SIGTERM', (signal)=>{
     logger.info('Received signal:', signal, ". Activating the gracefulTerminationWatcher.");
 });
 
-function LightDBServer({rootFolder, port}, callback) {
+function LightDBServer({rootFolder, port, host}, callback) {
     const apihubModule = require("apihub");
     const LokiEnclaveFacade = require("./LokiEnclaveFacade");
     const httpWrapper = apihubModule.getHttpWrapper();
     const Server = httpWrapper.Server;
     const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
-    const HOST = "localhost";
+    host = host || "localhost";
+    port = port || 8081;
+
     const server = new Server();
     let dynamicPort;
     const path = require("path");
@@ -66,12 +68,13 @@ function LightDBServer({rootFolder, port}, callback) {
             return;
         }
 
+        process.env.LIGHT_DB_SERVER_ADDRESS = `http://${host}:${port}`;
         registerEndpoints(callback);
     }
 
     function bootup(){
         logger.debug(`Trying to listen on port ${port}`);
-        server.listen(port, HOST, listenCallback);
+        server.listen(port, host, listenCallback);
     }
 
     bootup();
@@ -100,6 +103,8 @@ function LightDBServer({rootFolder, port}, callback) {
             res.setHeader('Access-Control-Allow-Credentials', true);
             next();
         });
+
+        server.use("/executeCommand", httpWrapper.httpUtils.bodyParser);
 
         server.put("/executeCommand", function (req, res) {
             const body = req.body;
