@@ -1,13 +1,15 @@
 require(" ../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
+const {createLokiEnclaveFacadeInstance} = require("../index");
 const assert = dc.assert;
 const numberOfREcords = 5;
 
 function getEnclaveDB(dbName) {
-    let EnclaveDB = require("../index.js");
-    return new EnclaveDB(dbName);
+    let createLokiEnclaveFacadeInstance = require("../index.js").createLokiEnclaveFacadeInstance;
+    return createLokiEnclaveFacadeInstance(dbName);
 }
+
 
 const TABLE_NAME = "testTable";
 const DID = "DID_newPk";

@@ -5,8 +5,8 @@ const assert = dc.assert;
 const numberOfRecords = 5;
 
 function getEnclaveDB(dbName) {
-  let EnclaveDB = require("../index.js");
-  return new EnclaveDB(dbName);
+  let createLokiEnclaveFacadeInstance = require("../index.js").createLokiEnclaveFacadeInstance;
+  return createLokiEnclaveFacadeInstance(dbName);
 }
 
 assert.callback("Enclave Queue test", (testFinishCallback) => {

@@ -1,15 +1,13 @@
 require("../../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
-const fs = require("fs");
 const assert = dc.assert;
-const EnclaveDB = require("../../index.js");
-const Adaptors = require("../../adaptors.js");
-
-
-function getEnclaveDB(dbName, saveInterval) {
-    return new EnclaveDB(dbName, saveInterval, Adaptors.FS);
+function getEnclaveDB(dbName, autoSaveInterval) {
+    const lokiEnclaveFacadeModule = require("../../index");
+    let createLokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance;
+    return createLokiEnclaveFacadeInstance(dbName, autoSaveInterval, lokiEnclaveFacadeModule.Adaptors.FS);
 }
+
 
 async function insertRecords(testDb, number) {
     const ids = []
