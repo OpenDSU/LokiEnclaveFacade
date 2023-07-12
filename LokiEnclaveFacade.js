@@ -227,7 +227,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     this.getAllRecords = (forDID, tableName, callback) => {
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback();
+            return callback(undefined, []);
         }
 
         let results;
@@ -237,6 +237,9 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
             return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
         }
 
+        if(!results){
+            results = [];
+        }
         callback(null, results);
     };
 
