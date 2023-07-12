@@ -4,7 +4,7 @@ process.on('uncaughtException', err => {
     logger.critical('There was an uncaught error', err, err.message, err.stack);
 });
 
-process.on('SIGTERM', (signal)=>{
+process.on('SIGTERM', (signal) => {
     process.shuttingDown = true;
     logger.info('Received signal:', signal, ". Activating the gracefulTerminationWatcher.");
 });
@@ -44,17 +44,18 @@ function LightDBServer({rootFolder, port, host}, callback) {
             if (!dynamicPort && callback) {
                 return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to listen on port <${port}>`, err));
             }
-            if(dynamicPort && error.code === 'EADDRINUSE'){
+            if (dynamicPort && error.code === 'EADDRINUSE') {
                 function getRandomPort() {
                     const min = 9000;
                     const max = 65535;
                     return Math.floor(Math.random() * (max - min) + min);
                 }
+
                 port = getRandomPort();
-                if(Number.isInteger(dynamicPort)){
+                if (Number.isInteger(dynamicPort)) {
                     dynamicPort -= 1;
                 }
-                setTimeout(bootup, CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL);
+                setTimeout(boot, CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL);
             }
         }
     };
@@ -72,22 +73,22 @@ function LightDBServer({rootFolder, port, host}, callback) {
         registerEndpoints();
     }
 
-    function bootup(){
+    function boot() {
         logger.debug(`Trying to listen on port ${port}`);
         server.listen(port, host, listenCallback);
     }
 
-    bootup();
+    boot();
 
     server.on('listening', bindFinished);
     server.on('error', listenCallback);
 
     function registerEndpoints() {
-        server.getAccessControlAllowHeadersAsString = function(){
+        server.getAccessControlAllowHeadersAsString = function () {
             let headers = "";
             let notFirst = false;
-            for(let header of accessControlAllowHeaders){
-                if(notFirst){
+            for (let header of accessControlAllowHeaders) {
+                if (notFirst) {
                     headers += ", ";
                 }
                 notFirst = true;
@@ -104,26 +105,38 @@ function LightDBServer({rootFolder, port, host}, callback) {
             next();
         });
 
-        server.use("/executeCommand", httpWrapper.httpUtils.bodyParser);
+        server.put("/executeCommand", (req, res, next) => {
+            httpWrapper.httpUtils.bodyParser(req, res, next);
+        });
 
         server.put("/executeCommand", function (req, res) {
-            const body = req.body;
-            const command = body.command;
-            const args = body.args;
+            let body = req.body;
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                logger.error("Invalid body", body);
+                res.statusCode = 400;
+                res.write("Invalid body");
+                return res.end();
+            }
+            const command = body.commandName;
+            const args = body.params;
 
 
-            if(typeof command !== "string"){
+            if (typeof command !== "string") {
                 logger.error("Invalid command", command);
-                return res.send(400, "Invalid command");
+                res.statusCode = 400;
+                res.write("Invalid command");
+                return res.end();
             }
 
-            if(!Array.isArray(args)){
+            if (!Array.isArray(args)) {
                 logger.error("Invalid args", args);
                 return res.send(400, "Invalid args");
             }
 
-            const callback = (err, result) => {
-                if(err){
+            const cb = (err, result) => {
+                if (err) {
                     res.statusCode = 500;
                     logger.error(`Error while executing command ${command}`, err);
                     res.write(`Error while executing command ${command}: ${err.message}`);
@@ -135,9 +148,13 @@ function LightDBServer({rootFolder, port, host}, callback) {
                 res.end();
             }
 
-            args.push(callback);
+            args.push(cb);
             lokiEnclaveFacade[command](...args);
         })
+
+        if (callback) {
+            callback();
+        }
     }
 }
 
