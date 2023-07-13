@@ -15,7 +15,7 @@ function LightDBServer({rootFolder, port, host}, callback) {
     const httpWrapper = apihubModule.getHttpWrapper();
     const Server = httpWrapper.Server;
     const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
-    host = host || "localhost";
+    host = host || "127.0.0.1";
     port = port || 8081;
 
     const server = new Server();
@@ -105,7 +105,7 @@ function LightDBServer({rootFolder, port, host}, callback) {
             next();
         });
 
-        server.put("/executeCommand", (req, res, next) => {
+        server.put("/executeCommand/:dbName", (req, res, next) => {
             httpWrapper.httpUtils.bodyParser(req, res, next);
         });
 
