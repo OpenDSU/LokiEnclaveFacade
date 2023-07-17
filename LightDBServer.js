@@ -109,7 +109,7 @@ function LightDBServer({rootFolder, port, host}, callback) {
             httpWrapper.httpUtils.bodyParser(req, res, next);
         });
 
-        server.put("/executeCommand", function (req, res) {
+        server.put("/executeCommand/:dbName", function (req, res) {
             let body = req.body;
             try {
                 body = JSON.parse(body);

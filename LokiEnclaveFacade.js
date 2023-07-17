@@ -15,6 +15,7 @@ let filterOperationsMap = {
 
 function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     const openDSU = require("opendsu");
+    const aclAPI = require("acl-magic");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
     const utils = openDSU.loadAPI("utils");
@@ -47,6 +48,19 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
     this.refresh = function (callback) {
         db.loadDatabaseInternal(undefined, callback);
+    }
+
+    const persistence = aclAPI.createEnclavePersistence(this);
+    this.grantAccess = function (forDID, tableName, callback) {
+        persistence.addResourceParent(tableName, forDID, callback);
+    }
+
+    this.hasAccess = function (forDID, tableName, callback) {
+        persistence.localResourceExists(tableName, forDID, callback);
+    }
+
+    this.revokeAccess = function (forDID, tableName, callback) {
+        persistence.delResourceParent(tableName, forDID, callback);
     }
 
     this.count = function (tableName, callback) {
