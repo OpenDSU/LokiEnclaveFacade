@@ -21,14 +21,13 @@ function LightDBServer({rootFolder, port, host}, callback) {
     const server = new Server();
     let dynamicPort;
     const path = require("path");
-    let storage = path.join(rootFolder, "external-volume", "light-db-server-root", "lightDB");
     const fs = require("fs");
     try {
-        fs.accessSync(storage);
+        fs.accessSync(rootFolder);
     } catch (err) {
-        fs.mkdirSync(path.dirname(storage), {recursive: true});
+        fs.mkdirSync(path.dirname(rootFolder), {recursive: true});
     }
-    const lokiEnclaveFacade = new LokiEnclaveFacade(storage);
+    const lokiEnclaveFacade = new LokiEnclaveFacade(rootFolder);
 
     let accessControlAllowHeaders = new Set();
     accessControlAllowHeaders.add("Content-Type");
@@ -70,6 +69,7 @@ function LightDBServer({rootFolder, port, host}, callback) {
         }
 
         process.env.LIGHT_DB_SERVER_ADDRESS = `http://${host}:${port}`;
+        logger.info(`LightDB server running at port: ${port}`);
         registerEndpoints();
     }
 
