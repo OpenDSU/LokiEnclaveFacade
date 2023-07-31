@@ -28,7 +28,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     const DIDS_PRIVATE_KEYS = "dids_private";
     const AUTOSAVE_INTERVAL = 100;
     const adapter = adaptorConstructorFunction === undefined ? new Adaptors.STRUCTURED() : new adaptorConstructorFunction();
-    
+
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for LokiEnclaveFacade");
@@ -49,18 +49,51 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     this.refresh = function (callback) {
         db.loadDatabaseInternal(undefined, callback);
     }
-
+    const WRITE_ACCESS = "write";
+    const READ_ACCESS = "read";
+    const WILDCARD = "*";
     const persistence = aclAPI.createEnclavePersistence(this);
-    this.grantAccess = function (forDID, tableName, callback) {
-        persistence.addResourceParent(tableName, forDID, callback);
+
+    this.grantWriteAccess = function (forDID, callback) {
+        persistence.grant(WRITE_ACCESS, WILDCARD, forDID, (err) => {
+            if (err) {
+                return callback(err);
+            }
+
+            persistence.grant(READ_ACCESS, WILDCARD, forDID, callback);
+        });
     }
 
-    this.hasAccess = function (forDID, tableName, callback) {
-        persistence.localResourceExists(tableName, forDID, callback);
+    this.hasWriteAccess = function (forDID, callback) {
+        persistence.loadResourceDirectGrants(WRITE_ACCESS, forDID, (err, usersWithAccess) => {
+            if (err) {
+                return callback(err);
+            }
+
+            callback(undefined, usersWithAccess.indexOf(WILDCARD) !== -1);
+        });
     }
 
-    this.revokeAccess = function (forDID, tableName, callback) {
-        persistence.delResourceParent(tableName, forDID, callback);
+    this.revokeWriteAccess = function (forDID, callback) {
+        persistence.ungrant(WRITE_ACCESS, WILDCARD, forDID, callback);
+    }
+
+    this.grantReadAccess = function (forDID, callback) {
+        persistence.grant(WRITE_ACCESS, WILDCARD, forDID, callback);
+    }
+
+    this.hasReadAccess = function (forDID, callback) {
+        persistence.loadResourceDirectGrants(READ_ACCESS, forDID, (err, usersWithAccess) => {
+            if (err) {
+                return callback(err);
+            }
+
+            callback(undefined, usersWithAccess.indexOf(WILDCARD) !== -1);
+        });
+    }
+
+    this.revokeReadAccess = function (forDID, tableName, callback) {
+        persistence.ungrant(WRITE_ACCESS, WILDCARD, forDID, callback);
     }
 
     this.count = function (tableName, callback) {
@@ -84,24 +117,28 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         })
     }
 
-    this.createCollection = function(forDID, tableName, indicesList){
+    this.createCollection = function (forDID, tableName, indicesList) {
         db.addCollection(tableName, {indices: indicesList})
     }
 
-    this.addIndex = function(forDID, tableName, property){
+    this.addIndex = function (forDID, tableName, property) {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
         table.ensureIndex(property, true);
     }
 
-    this.insertRecord = function (forDID, tableName, pk, record, callback) {
+    this.insertRecord = (forDID, tableName, pk, record, callback) => {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
-        const foundRecord = table.findOne({ 'pk': pk });
+        const foundRecord = table.findOne({'pk': pk});
         if (foundRecord) {
             return callback(createOpenDSUErrorWrapper(`A record with pk ${pk} already exists in ${tableName}`))
         }
         let result;
         try {
-            result = table.insert({ "pk": pk, ...record, "did": forDID, "__timestamp": record.__timestamp || Date.now() });
+            result = table.insert({
+                "pk": pk, ...record,
+                "did": forDID,
+                "__timestamp": record.__timestamp || Date.now()
+            });
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
@@ -130,7 +167,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         if (!table) {
             return callback();
         }
-        const record = table.findOne({ 'pk': pk });
+        const record = table.findOne({'pk': pk});
         if (!record) {
             return callback(undefined);
         }
@@ -151,7 +188,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         }
         let result;
         try {
-            result = table.findObject({ 'pk': pk });
+            result = table.findObject({'pk': pk});
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Could not find object with pk ${pk}`, err));
         }
@@ -251,7 +288,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
             return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
         }
 
-        if(!results){
+        if (!results) {
             results = [];
         }
         callback(null, results);
@@ -296,7 +333,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     //------------------ queue -----------------
     let self = this;
     this.addInQueue = function (forDID, queueName, encryptedObject, ensureUniqueness, callback) {
-        if(typeof ensureUniqueness === "function"){
+        if (typeof ensureUniqueness === "function") {
             callback = ensureUniqueness;
             ensureUniqueness = false;
         }
@@ -391,7 +428,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         const keySSIIdentifier = seedSSI.getIdentifier();
 
         const registerDerivedKeySSIs = (derivedKeySSI) => {
-            this.insertRecord(forDID, KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), { capableOfSigningKeySSI: keySSIIdentifier }, (err) => {
+            this.insertRecord(forDID, KEY_SSIS_TABLE, derivedKeySSI.getIdentifier(), {capableOfSigningKeySSI: keySSIIdentifier}, (err) => {
                 if (err) {
                     return callback(err);
                 }
@@ -406,7 +443,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
             });
         }
 
-        this.insertRecord(forDID, SEED_SSIS_TABLE, alias, { seedSSI: keySSIIdentifier }, (err) => {
+        this.insertRecord(forDID, SEED_SSIS_TABLE, alias, {seedSSI: keySSIIdentifier}, (err) => {
             if (err) {
                 return callback(err);
             }
@@ -463,7 +500,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     this.storeDID = (forDID, storedDID, privateKeys, callback) => {
         this.getRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, (err, res) => {
             if (err || !res) {
-                return this.insertRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, { privateKeys: privateKeys }, callback);
+                return this.insertRecord(forDID, DIDS_PRIVATE_KEYS, storedDID, {privateKeys: privateKeys}, callback);
             }
 
             privateKeys.forEach(privateKey => {
