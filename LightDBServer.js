@@ -1,5 +1,6 @@
+const LokiEnclaveFacade = require("./LokiEnclaveFacade");
 const logger = $$.getLogger("LightDBServer", "LokiEnclaveFacade");
-
+const DATABASE = "database";
 process.on('uncaughtException', err => {
     logger.critical('There was an uncaught error', err, err.message, err.stack);
 });
@@ -20,14 +21,23 @@ function LightDBServer({rootFolder, port, host}, callback) {
 
     const server = new Server();
     let dynamicPort;
+    const enclaves = {};
     const path = require("path");
     const fs = require("fs");
     try {
         fs.accessSync(rootFolder);
+        const folderContent = fs.readdirSync(rootFolder, {withFileTypes: true});
+        for(let entry of folderContent){
+            if(entry.isDirectory()){
+                let enclaveName = entry.name;
+                logger.info(`Loading database ${enclaveName}`);
+                enclaves[enclaveName] = new LokiEnclaveFacade(path.join(rootFolder, enclaveName, DATABASE));
+            }
+        }
     } catch (err) {
-        fs.mkdirSync(path.dirname(rootFolder), {recursive: true});
+        logger.info(`Failed to access the storage folder: ${rootFolder}. Ensuring folder structure...`);
+        fs.mkdirSync(rootFolder, {recursive: true});
     }
-    const lokiEnclaveFacade = new LokiEnclaveFacade(rootFolder);
 
     let accessControlAllowHeaders = new Set();
     accessControlAllowHeaders.add("Content-Type");
@@ -97,6 +107,19 @@ function LightDBServer({rootFolder, port, host}, callback) {
             return headers;
         }
 
+        server.use(function gracefulTerminationWatcher(req, res, next) {
+            if(process.shuttingDown){
+                //uncaught exception was caught so server is shutting down gracefully and not accepting any requests
+                res.statusCode = 503;
+                logger.log(0x02, `Rejecting ${req.url} with status code ${res.statusCode} because process is shutting down.`);
+                res.end();
+                return;
+            }
+            //if the shuttingDown flag not present, we let the request go on...
+            next();
+        });
+
+
         server.use(function (req, res, next) {
             res.setHeader('Access-Control-Allow-Origin', req.headers.origin || req.headers.host || "*");
             res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
@@ -105,11 +128,18 @@ function LightDBServer({rootFolder, port, host}, callback) {
             next();
         });
 
-        server.put("/executeCommand/:dbName", (req, res, next) => {
+        server.put(`/executeCommand/:dbName`, (req, res, next) => {
+            const {dbName} = req.params;
+            if(!enclaves[dbName]){
+                res.statusCode = 400;
+                res.write(`No db with name ${dbName} was found!`);
+                res.end();
+                return;
+            }
             httpWrapper.httpUtils.bodyParser(req, res, next);
         });
 
-        server.put("/executeCommand/:dbName", function (req, res) {
+        server.put(`/executeCommand/:dbName`, function (req, res) {
             let body = req.body;
             try {
                 body = JSON.parse(body);
@@ -149,8 +179,35 @@ function LightDBServer({rootFolder, port, host}, callback) {
             }
 
             args.push(cb);
-            lokiEnclaveFacade[command](...args);
-        })
+            enclaves[req.params.dbName][command](...args);
+        });
+
+        server.put(`/createDatabase/:dbName`, function(req, res){
+            const {dbName} = req.params;
+            if(enclaves[dbName]){
+                res.statusCode = 409;
+                res.write("Already exists");
+                res.end();
+                return;
+            }
+
+            const storage = path.join(rootFolder, dbName);
+            logger.info(`Creating new Database at ${storage}`);
+            let fsModule = "fs";
+            fsModule = require(fsModule);
+            fsModule.mkdir(storage, {recursive: true}, (err)=>{
+                if(err){
+                    logger.debug("Failed to create database", err);
+                    res.statusCode = 500;
+                    res.end();
+                    return;
+                }
+                enclaves[dbName] = new LokiEnclaveFacade(path.join(storage, DATABASE));
+                res.statusCode = 201;
+                res.end();
+            })
+
+        });
 
         if (callback) {
             callback();
