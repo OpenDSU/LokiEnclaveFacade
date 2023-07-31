@@ -93,7 +93,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     }
 
     this.revokeReadAccess = function (forDID, tableName, callback) {
-        persistence.ungrant(WRITE_ACCESS, WILDCARD, forDID, callback);
+        persistence.ungrant(READ_ACCESS, WILDCARD, forDID, callback);
     }
 
     this.count = function (tableName, callback) {

@@ -23,13 +23,13 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         const w3cDID = openDSU.loadAPI("w3cdid");
         let error, userDID;
         [error, userDID] = await $$.call(w3cDID.createIdentity, "ssi:name", DOMAIN, "user");
-        if(error){
+        if (error) {
             throw error;
         }
         let anotherUserDID;
         [error, anotherUserDID] = await $$.call(w3cDID.createIdentity, "ssi:name", DOMAIN, "anotherUser");
         anotherUserDID = anotherUserDID.getIdentifier();
-        if(error){
+        if (error) {
             throw error;
         }
 
@@ -53,17 +53,26 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         await $$.call(lokiEnclaveFacade.revokeWriteAccess, userDID);
         let hasWriteAccessAfterRevoke;
         [error, hasWriteAccessAfterRevoke] = await $$.call(lokiEnclaveFacade.hasWriteAccess, userDID);
-        if(error){
+        if (error) {
             throw error;
         }
         assert.false(hasWriteAccessAfterRevoke, "User should not have write access");
 
         let hasReadAccessAfterRevoke;
         [error, hasReadAccessAfterRevoke] = await $$.call(lokiEnclaveFacade.hasReadAccess, userDID);
-        if(error){
+        if (error) {
             throw error;
         }
         assert.true(hasReadAccessAfterRevoke, "User should have read access");
+
+        await $$.call(lokiEnclaveFacade.revokeReadAccess, userDID);
+        hasReadAccessAfterRevoke = undefined;
+        [error, hasReadAccessAfterRevoke] = await $$.call(lokiEnclaveFacade.hasReadAccess, userDID);
+        if (error) {
+            throw error;
+        }
+        assert.false(hasReadAccessAfterRevoke, "User should not have read access");
+
         testFinishCallback();
     })
 }, 60000)
