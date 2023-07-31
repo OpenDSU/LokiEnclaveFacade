@@ -1,4 +1,3 @@
-const LokiEnclaveFacade = require("./LokiEnclaveFacade");
 const logger = $$.getLogger("LightDBServer", "LokiEnclaveFacade");
 const DATABASE = "database";
 process.on('uncaughtException', err => {
