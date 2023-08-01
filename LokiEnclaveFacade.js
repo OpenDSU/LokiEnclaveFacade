@@ -1,8 +1,6 @@
 const Adaptors = require("./adaptors.js");
 const loki = require("./lib/lokijs/src/lokijs.js");
 
-const TABLE_NOT_FOUND_ERROR_CODE = 100;
-
 let filterOperationsMap = {
     "!=": "$ne",
     "==": "$aeq",
@@ -54,17 +52,17 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     const WILDCARD = "*";
     const persistence = aclAPI.createEnclavePersistence(this);
 
-    this.grantWriteAccess = function (forDID, callback) {
+    this.grantWriteAccess = (forDID, callback) => {
         persistence.grant(WRITE_ACCESS, WILDCARD, forDID, (err) => {
             if (err) {
                 return callback(err);
             }
 
-            persistence.grant(READ_ACCESS, WILDCARD, forDID, callback);
+            this.grantReadAccess(forDID, callback);
         });
     }
 
-    this.hasWriteAccess = function (forDID, callback) {
+    this.hasWriteAccess = (forDID, callback) => {
         persistence.loadResourceDirectGrants(WRITE_ACCESS, forDID, (err, usersWithAccess) => {
             if (err) {
                 return callback(err);
@@ -74,15 +72,15 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         });
     }
 
-    this.revokeWriteAccess = function (forDID, callback) {
+    this.revokeWriteAccess = (forDID, callback) => {
         persistence.ungrant(WRITE_ACCESS, WILDCARD, forDID, callback);
     }
 
-    this.grantReadAccess = function (forDID, callback) {
-        persistence.grant(WRITE_ACCESS, WILDCARD, forDID, callback);
+    this.grantReadAccess = (forDID, callback) => {
+        persistence.grant(READ_ACCESS, WILDCARD, forDID, callback);
     }
 
-    this.hasReadAccess = function (forDID, callback) {
+    this.hasReadAccess = (forDID, callback) => {
         persistence.loadResourceDirectGrants(READ_ACCESS, forDID, (err, usersWithAccess) => {
             if (err) {
                 return callback(err);
@@ -92,8 +90,14 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         });
     }
 
-    this.revokeReadAccess = function (forDID, tableName, callback) {
-        persistence.ungrant(READ_ACCESS, WILDCARD, forDID, callback);
+    this.revokeReadAccess =  (forDID, callback) => {
+        persistence.ungrant(READ_ACCESS, WILDCARD, forDID, err => {
+            if (err) {
+                return callback(err);
+            }
+
+            this.revokeWriteAccess(forDID, callback);
+        });
     }
 
     this.count = function (tableName, callback) {
@@ -111,19 +115,37 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         callback(null, result)
     }
 
-    this.getCollections = function () {
-        return db.listCollections().map(collection => {
-            return collection.name
-        })
+    this.getCollections = (callback) => {
+        const collections = db.listCollections();
+        if(Array.isArray(collections)){
+            return callback(undefined, collections.map(collection => collection.name));
+        }
+
+        callback(undefined, []);
     }
 
-    this.createCollection = function (forDID, tableName, indicesList) {
-        db.addCollection(tableName, {indices: indicesList})
+    this.createCollection = function (forDID, tableName, indicesList, callback) {
+        if (typeof indicesList === "function") {
+            callback = indicesList;
+            indicesList = undefined;
+        }
+
+        try {
+            db.addCollection(tableName, {indices: indicesList});
+        } catch (err) {
+            return callback(createOpenDSUErrorWrapper(`Could not create collection ${tableName}`, err))
+        }
+        callback();
     }
 
-    this.addIndex = function (forDID, tableName, property) {
+    this.addIndex = function (forDID, tableName, property, callback) {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
-        table.ensureIndex(property, true);
+        try{
+            table.ensureIndex(property, true);
+        } catch (err) {
+            return callback(createOpenDSUErrorWrapper(`Could not add index ${property} on ${tableName}`, err))
+        }
+        callback();
     }
 
     this.insertRecord = (forDID, tableName, pk, record, callback) => {
