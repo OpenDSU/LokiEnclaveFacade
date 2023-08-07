@@ -9,33 +9,32 @@ process.on('SIGTERM', (signal) => {
     logger.info('Received signal:', signal, ". Activating the gracefulTerminationWatcher.");
 });
 
-function LightDBServer({rootFolder, port, host}, callback) {
+function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, callback) {
     const apihubModule = require("apihub");
     const LokiEnclaveFacade = require("./LokiEnclaveFacade");
     const httpWrapper = apihubModule.getHttpWrapper();
     const Server = httpWrapper.Server;
     const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
     host = host || "127.0.0.1";
-    port = port || 8081;
+    lightDBPort = lightDBPort || 8081;
 
     const server = new Server();
-    let dynamicPort;
     const enclaves = {};
     const path = require("path");
     const fs = require("fs");
     try {
-        fs.accessSync(rootFolder);
-        const folderContent = fs.readdirSync(rootFolder, {withFileTypes: true});
+        fs.accessSync(lightDBStorage);
+        const folderContent = fs.readdirSync(lightDBStorage, {withFileTypes: true});
         for(let entry of folderContent){
             if(entry.isDirectory()){
                 let enclaveName = entry.name;
                 logger.info(`Loading database ${enclaveName}`);
-                enclaves[enclaveName] = new LokiEnclaveFacade(path.join(rootFolder, enclaveName, DATABASE));
+                enclaves[enclaveName] = new LokiEnclaveFacade(path.join(lightDBStorage, enclaveName, DATABASE));
             }
         }
     } catch (err) {
-        logger.info(`Failed to access the storage folder: ${rootFolder}. Ensuring folder structure...`);
-        fs.mkdirSync(rootFolder, {recursive: true});
+        logger.info(`Failed to access the storage folder: ${lightDBStorage}. Ensuring folder structure...`);
+        fs.mkdirSync(lightDBStorage, {recursive: true});
     }
 
     let accessControlAllowHeaders = new Set();
@@ -49,19 +48,19 @@ function LightDBServer({rootFolder, port, host}, callback) {
     let listenCallback = (err) => {
         if (err) {
             logger.error(err);
-            if (!dynamicPort && callback) {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to listen on port <${port}>`, err));
+            if (!lightDBDynamicPort && callback) {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to listen on port <${lightDBPort}>`, err));
             }
-            if (dynamicPort && error.code === 'EADDRINUSE') {
+            if (lightDBDynamicPort && err.code === 'EADDRINUSE') {
                 function getRandomPort() {
                     const min = 9000;
                     const max = 65535;
                     return Math.floor(Math.random() * (max - min) + min);
                 }
 
-                port = getRandomPort();
-                if (Number.isInteger(dynamicPort)) {
-                    dynamicPort -= 1;
+                lightDBPort = getRandomPort();
+                if (Number.isInteger(lightDBDynamicPort)) {
+                    lightDBDynamicPort -= 1;
                 }
                 setTimeout(boot, CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL);
             }
@@ -72,19 +71,19 @@ function LightDBServer({rootFolder, port, host}, callback) {
         if (err) {
             logger.error(err);
             if (callback) {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to bind on port <${port}>`, err));
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to bind on port <${lightDBPort}>`, err));
             }
             return;
         }
 
-        process.env.LIGHT_DB_SERVER_ADDRESS = `http://${host}:${port}`;
-        logger.info(`LightDB server running at port: ${port}`);
+        process.env.LIGHT_DB_SERVER_ADDRESS = `http://${host}:${lightDBPort}`;
+        logger.info(`LightDB server running at port: ${lightDBPort}`);
         registerEndpoints();
     }
 
     function boot() {
-        logger.debug(`Trying to listen on port ${port}`);
-        server.listen(port, host, listenCallback);
+        logger.debug(`Trying to listen on port ${lightDBPort}`);
+        server.listen(lightDBPort, host, listenCallback);
     }
 
     boot();
@@ -190,7 +189,7 @@ function LightDBServer({rootFolder, port, host}, callback) {
                 return;
             }
 
-            const storage = path.join(rootFolder, dbName);
+            const storage = path.join(lightDBStorage, dbName);
             logger.info(`Creating new Database at ${storage}`);
             let fsModule = "fs";
             fsModule = require(fsModule);

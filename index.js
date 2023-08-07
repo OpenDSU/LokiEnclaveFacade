@@ -5,12 +5,8 @@ const createLokiEnclaveFacadeInstance = (storage, autoSaveInterval, adaptorConst
     return new LokiEnclaveFacade(storage, autoSaveInterval, adaptorConstructorFunction);
 }
 
-const createLightDBServerInstance = (port, folder, host, callback) => {
-    if(typeof host === "function"){
-        callback = host;
-        host = undefined;
-    }
-    return new LightDBServer({rootFolder: folder, port, host}, callback);
+const createLightDBServerInstance = (config, callback) => {
+    return new LightDBServer(config, callback);
 }
 
 module.exports = {
