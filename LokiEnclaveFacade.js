@@ -90,7 +90,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         });
     }
 
-    this.revokeReadAccess =  (forDID, callback) => {
+    this.revokeReadAccess = (forDID, callback) => {
         persistence.ungrant(READ_ACCESS, WILDCARD, forDID, err => {
             if (err) {
                 return callback(err);
@@ -117,7 +117,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
     this.getCollections = (callback) => {
         const collections = db.listCollections();
-        if(Array.isArray(collections)){
+        if (Array.isArray(collections)) {
             return callback(undefined, collections.map(collection => collection.name));
         }
 
@@ -140,7 +140,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
     this.addIndex = function (forDID, tableName, property, callback) {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
-        try{
+        try {
             table.ensureIndex(property, true);
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Could not add index ${property} on ${tableName}`, err))
@@ -277,9 +277,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
         let table = db.getCollection(tableName);
         if (!table) {
-            const err = Error(`Table ${tableName} does not exist.`);
-            err.code = 404;
-            return callback(err);
+            return callback(undefined, []);
         }
         let direction = false;
         if (sort === "desc") {
