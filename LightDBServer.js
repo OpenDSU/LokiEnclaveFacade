@@ -25,8 +25,8 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
     try {
         fs.accessSync(lightDBStorage);
         const folderContent = fs.readdirSync(lightDBStorage, {withFileTypes: true});
-        for(let entry of folderContent){
-            if(entry.isDirectory()){
+        for (let entry of folderContent) {
+            if (entry.isDirectory()) {
                 let enclaveName = entry.name;
                 logger.info(`Loading database ${enclaveName}`);
                 enclaves[enclaveName] = new LokiEnclaveFacade(path.join(lightDBStorage, enclaveName, DATABASE));
@@ -106,7 +106,7 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
         }
 
         server.use(function gracefulTerminationWatcher(req, res, next) {
-            if(process.shuttingDown){
+            if (process.shuttingDown) {
                 //uncaught exception was caught so server is shutting down gracefully and not accepting any requests
                 res.statusCode = 503;
                 logger.log(0x02, `Rejecting ${req.url} with status code ${res.statusCode} because process is shutting down.`);
@@ -128,7 +128,7 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
 
         server.put(`/executeCommand/:dbName`, (req, res, next) => {
             const {dbName} = req.params;
-            if(!enclaves[dbName]){
+            if (!enclaves[dbName]) {
                 res.statusCode = 400;
                 res.write(`No db with name ${dbName} was found!`);
                 res.end();
@@ -147,42 +147,86 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                 res.write("Invalid body");
                 return res.end();
             }
-            const command = body.commandName;
-            const args = body.params;
 
+            if (typeof body.command !== "string") {
+                logger.error("Invalid command", body.command);
+                res.statusCode = 400;
+                res.write("Invalid command");
+                return res.end();
+            }
 
-            if (typeof command !== "string") {
+            let command;
+            try {
+                command = JSON.parse(body.command);
+            } catch (e) {
                 logger.error("Invalid command", command);
                 res.statusCode = 400;
                 res.write("Invalid command");
                 return res.end();
             }
 
+            const didAPI = require("opendsu").loadAPI("w3cdid");
+            const args = command.params;
             if (!Array.isArray(args)) {
                 logger.error("Invalid args", args);
                 return res.send(400, "Invalid args");
             }
 
-            const cb = (err, result) => {
+            let didDocument;
+            const __verifySignatureAndExecuteCommand = () => {
+                didDocument.verify(body.command, $$.Buffer.from(body.signature, "base64"), (err, result) => {
+                    if (err) {
+                        logger.error(`Failed to verify signature`, err);
+                        res.statusCode = 500;
+                        res.write(`Failed to verify signature`);
+                        return res.end();
+                    }
+
+                    if (!result) {
+                        logger.error(`Invalid signature`);
+                        res.statusCode = 500;
+                        res.write(`Invalid signature`);
+                        return res.end();
+                    }
+
+                    const cb = (err, result) => {
+                        if (err) {
+                            res.statusCode = 500;
+                            logger.error(`Error while executing command ${command.commandName}`, err);
+                            res.write(`Error while executing command ${command.commandName}: ${err.message}`);
+                            return res.end();
+                        }
+
+                        res.statusCode = 200;
+                        res.write(JSON.stringify(result));
+                        res.end();
+                    }
+
+                    args.push(cb);
+                    enclaves[req.params.dbName][command.commandName](...args);
+                });
+            }
+            if(args[0] === $$.SYSTEM_IDENTIFIER){
+                didDocument = $$.SYSTEM_DID_DOCUMENT;
+                return __verifySignatureAndExecuteCommand();
+            }
+
+            didAPI.resolveDID(args[0], (err, _didDocument) => {
                 if (err) {
+                    logger.error(`Failed to resolve DID ${args[0]}`, err);
                     res.statusCode = 500;
-                    logger.error(`Error while executing command ${command}`, err);
-                    res.write(`Error while executing command ${command}: ${err.message}`);
+                    res.write(`Failed to resolve DID ${args[0]}`);
                     return res.end();
                 }
 
-                res.statusCode = 200;
-                res.write(JSON.stringify(result));
-                res.end();
-            }
-
-            args.push(cb);
-            enclaves[req.params.dbName][command](...args);
+                didDocument = _didDocument;
+                __verifySignatureAndExecuteCommand();
+            });
         });
 
-        server.put(`/createDatabase/:dbName`, function(req, res){
+        server.put(`/createDatabase/:dbName`, function (req, res) {
             const {dbName} = req.params;
-            if(enclaves[dbName]){
+            if (enclaves[dbName]) {
                 res.statusCode = 409;
                 res.write("Already exists");
                 res.end();
@@ -193,8 +237,8 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
             logger.info(`Creating new Database at ${storage}`);
             let fsModule = "fs";
             fsModule = require(fsModule);
-            fsModule.mkdir(storage, {recursive: true}, (err)=>{
-                if(err){
+            fsModule.mkdir(storage, {recursive: true}, (err) => {
+                if (err) {
                     logger.debug("Failed to create database", err);
                     res.statusCode = 500;
                     res.end();
