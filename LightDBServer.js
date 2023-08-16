@@ -198,6 +198,7 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                         }
 
                         res.statusCode = 200;
+                        console.log("RESULT =======================", result);
                         res.write(JSON.stringify(result));
                         res.end();
                     }
