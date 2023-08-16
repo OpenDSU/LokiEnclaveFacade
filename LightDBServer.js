@@ -192,6 +192,7 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                     const cb = (err, result) => {
                         if (err) {
                             res.statusCode = 500;
+                            console.log("ERROR =======================", err.message);
                             logger.error(`Error while executing command ${command.commandName}`, err);
                             res.write(`Error while executing command ${command.commandName}: ${err.message}`);
                             return res.end();
