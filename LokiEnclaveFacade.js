@@ -206,7 +206,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     this.getRecord = function (forDID, tableName, pk, callback) {
         let table = db.getCollection(tableName);
         if (!table) {
-            return callback();
+            return callback(Error(`Table ${tableName} not found`));
         }
         let result;
         try {
