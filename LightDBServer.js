@@ -198,7 +198,9 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                         }
 
                         res.statusCode = 200;
-                        res.write(JSON.stringify(result));
+                        if(typeof result !== "undefined"){
+                            res.write(JSON.stringify(result));
+                        }
                         res.end();
                     }
 
@@ -243,6 +245,12 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                     res.statusCode = 500;
                     res.end();
                     return;
+                }
+                if(enclaves[dbName]){
+                    logger.debug("Race condition detected and resolved during lightDB database creation");
+                    res.statusCode = 409;
+                    res.write("Already exists");
+                    return res.end();
                 }
                 enclaves[dbName] = new LokiEnclaveFacade(path.join(storage, DATABASE));
                 res.statusCode = 201;

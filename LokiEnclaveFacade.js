@@ -189,18 +189,19 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         if (!table) {
             return callback();
         }
-        const record = table.findOne({'pk': pk});
+
+        let record = table.findOne({'pk': pk});
         if (!record) {
             return callback(undefined);
         }
-        let result;
-        try {
-            result = table.remove(record);
-        } catch (err) {
+
+        try{
+            table.findAndRemove({'pk': pk});
+        }catch(err){
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
-        callback(null, result);
+        callback(null, record);
     }
 
     this.getRecord = function (forDID, tableName, pk, callback) {
@@ -390,6 +391,14 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
                 return callback(err);
             }
+
+/*            result = result.filter(item => {
+                if(typeof item.$loki !== "undefined"){
+                    return true;
+                }
+                logger.warn("A message was filtered out because wrong loki document structure");
+                return false;
+            });*/
 
             result = result.map(item => {
                 return item.pk
