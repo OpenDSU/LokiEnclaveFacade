@@ -152,7 +152,9 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         let table = db.getCollection(tableName) || db.addCollection(tableName);
         const foundRecord = table.findOne({'pk': pk});
         if (foundRecord) {
-            return callback(createOpenDSUErrorWrapper(`A record with pk ${pk} already exists in ${tableName}`))
+            let error = `A record with pk ${pk} already exists in ${tableName}`
+            console.log(error);
+            return callback(createOpenDSUErrorWrapper(error));
         }
         let result;
         try {
@@ -162,6 +164,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
                 "__timestamp": record.__timestamp || Date.now()
             });
         } catch (err) {
+            console.log(`Failed to insert ${pk} into table ${tableName}`, err);
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
