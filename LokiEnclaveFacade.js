@@ -150,7 +150,16 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
     this.insertRecord = (forDID, tableName, pk, record, callback) => {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
-        const foundRecord = table.findOne({'pk': pk});
+        if (record.meta) {
+            delete record.meta;
+        }
+
+        if (record.$loki) {
+            delete record.$loki;
+        }
+
+        let foundRecord = table.findObject({'pk': pk});
+
         if (foundRecord) {
             let error = `A record with pk ${pk} already exists in ${tableName}`
             console.log(error);
