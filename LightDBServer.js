@@ -47,11 +47,8 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
 
     let listenCallback = (err) => {
         if (err) {
-            logger.error(err);
-            if (!lightDBDynamicPort && callback) {
-                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to listen on port <${lightDBPort}>`, err));
-            }
             if (lightDBDynamicPort && err.code === 'EADDRINUSE') {
+                logger.debug("Failed to listen on port <" + lightDBPort + ">", err);
                 function getRandomPort() {
                     const min = 9000;
                     const max = 65535;
@@ -63,6 +60,11 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                     lightDBDynamicPort -= 1;
                 }
                 setTimeout(boot, CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL);
+                return
+            }
+            logger.error(err);
+            if (!lightDBDynamicPort && callback) {
+                return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to listen on port <${lightDBPort}>`, err));
             }
         }
     };
@@ -79,6 +81,9 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
         process.env.LIGHT_DB_SERVER_ADDRESS = `http://${host}:${lightDBPort}`;
         logger.info(`LightDB server running at port: ${lightDBPort}`);
         registerEndpoints();
+        if (callback) {
+            callback(undefined, server);
+        }
     }
 
     function boot() {
@@ -256,12 +261,7 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                 res.statusCode = 201;
                 res.end();
             })
-
         });
-
-        if (callback) {
-            callback();
-        }
     }
 }
 
