@@ -246,13 +246,13 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
             fsModule = require(fsModule);
             fsModule.mkdir(storage, {recursive: true}, (err) => {
                 if (err) {
-                    logger.debug("Failed to create database", err);
+                    logger.error("Failed to create database", err);
                     res.statusCode = 500;
                     res.end();
                     return;
                 }
                 if(enclaves[dbName]){
-                    logger.debug("Race condition detected and resolved during lightDB database creation");
+                    logger.error("Race condition detected and resolved during lightDB database creation");
                     res.statusCode = 409;
                     res.write("Already exists");
                     return res.end();
