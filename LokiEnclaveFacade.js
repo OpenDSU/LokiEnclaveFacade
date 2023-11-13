@@ -49,6 +49,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     }
     const WRITE_ACCESS = "write";
     const READ_ACCESS = "read";
+    const EXECUTE_ACCESS = "execute";
     const WILDCARD = "*";
     const persistence = aclAPI.createEnclavePersistence(this);
 
@@ -74,6 +75,24 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
 
     this.revokeWriteAccess = (forDID, callback) => {
         persistence.ungrant(WRITE_ACCESS, WILDCARD, forDID, callback);
+    }
+
+    this.grantExecutionAccess = (forDID, callback) => {
+        persistence.grant(EXECUTE_ACCESS, WILDCARD, forDID, callback);
+    }
+
+    this.hasExecutionAccess = (forDID, callback) => {
+        persistence.loadResourceDirectGrants(EXECUTE_ACCESS, forDID, (err, usersWithAccess) => {
+            if (err) {
+                return callback(err);
+            }
+
+            callback(undefined, usersWithAccess.indexOf(WILDCARD) !== -1);
+        });
+    }
+
+    this.revokeExecutionAccess = (forDID, callback) => {
+        persistence.ungrant(EXECUTE_ACCESS, WILDCARD, forDID, callback);
     }
 
     this.grantReadAccess = (forDID, callback) => {
