@@ -19,8 +19,6 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     const utils = openDSU.loadAPI("utils");
     const CryptoSkills = w3cDID.CryptographicSkills;
     const logger = $$.getLogger("LokiEnclaveFacade", "lokiEnclaveFacade");
-    const DEFAULT_NAME = "LokiEnclaveFacade";
-    const path = require("path");
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
@@ -49,7 +47,6 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
     const WRITE_ACCESS = "write";
     const READ_ACCESS = "read";
-    const EXECUTE_ACCESS = "execute";
     const WILDCARD = "*";
     const persistence = aclAPI.createEnclavePersistence(this);
 
