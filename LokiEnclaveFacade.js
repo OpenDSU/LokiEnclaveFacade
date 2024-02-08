@@ -11,6 +11,17 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.refresh(callback);
     }
 
+    this.refreshAsync =  () => {
+        return new Promise((resolve, reject) => {
+            this.refresh((err)=>{
+                if(err){
+                    return reject(err);
+                }
+                resolve();
+            });
+        });
+    }
+
     const WRITE_ACCESS = "write";
     const READ_ACCESS = "read";
     const WILDCARD = "*";
@@ -98,6 +109,31 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
             indicesList = undefined;
         }
         this.storageDB.createCollection(tableName, indicesList, callback);
+    }
+
+    this.allowedInReadOnlyMode = function (functionName){
+        let readOnlyFunctions = ["getCollections",
+            "listQueue",
+            "queueSize",
+            "count",
+            "hasReadAccess",
+            "getPrivateInfoForDID",
+            "getCapableOfSigningKeySSI",
+            "getPathKeyMapping",
+            "getDID",
+            "getPrivateKeyForSlot",
+            "getIndexedFields",
+            "getRecord",
+            "getAllTableNames",
+            "filter",
+            "readKey",
+            "getAllRecords",
+            "getReadForKeySSI",
+            "verifyForDID",
+            "encryptMessage",
+            "decryptMessage"];
+
+        return readOnlyFunctions.indexOf(functionName) !== -1;
     }
 
     utils.bindAutoPendingFunctions(this, ["on", "off", "dispatchEvent", "beginBatch", "isInitialised", "getEnclaveType", "getDID", "getUniqueIdAsync"]);

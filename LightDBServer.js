@@ -9,16 +9,22 @@ process.on('SIGTERM', (signal) => {
     logger.info('Received signal:', signal, ". Activating the gracefulTerminationWatcher.");
 });
 
-function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, callback) {
+function LightDBServer(config, callback) {
+    let {lightDBStorage, lightDBPort, lightDBDynamicPort, host} = config;
     const apihubModule = require("apihub");
     const LokiEnclaveFacade = require("./LokiEnclaveFacade");
     const httpWrapper = apihubModule.getHttpWrapper();
     const Server = httpWrapper.Server;
     const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
+    //in read only mode if the time from the last refresh is bigger than this timeout then a refresh will be executed
+    const LAST_REFRESH_TIMEOUT = 30000;
+    const lastRefreshes = {};
+
     host = host || "127.0.0.1";
     lightDBPort = lightDBPort || 8081;
 
     const server = new Server();
+    server.config = config;
     const enclaves = {};
     const path = require("path");
     const fs = require("fs");
@@ -131,6 +137,9 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
             next();
         });
 
+        //we activate the readOnly without the server.use handler becase we expose only PUT type of http methods
+        apihubModule.middlewares.ReadOnly(server, false);
+
         server.put(`/executeCommand/:dbName`, (req, res, next) => {
             const {dbName} = req.params;
             if (!enclaves[dbName]) {
@@ -179,7 +188,7 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
 
             let didDocument;
             const __verifySignatureAndExecuteCommand = () => {
-                didDocument.verify(body.command, $$.Buffer.from(body.signature, "base64"), (err, result) => {
+                didDocument.verify(body.command, $$.Buffer.from(body.signature, "base64"), async (err, result) => {
                     if (err) {
                         logger.error(`Failed to verify signature`, err);
                         res.statusCode = 500;
@@ -192,6 +201,27 @@ function LightDBServer({lightDBStorage, lightDBPort, lightDBDynamicPort, host}, 
                         res.statusCode = 500;
                         res.write(`Invalid signature`);
                         return res.end();
+                    }
+
+                    if(server.readOnlyModeActive() ) {
+                        if (enclaves[req.params.dbName].allowedInReadOnlyMode &&
+                            !enclaves[req.params.dbName].allowedInReadOnlyMode([command.commandName])) {
+
+                            res.statusCode = 403;
+                            res.end();
+                            return;
+                        }
+
+                        //at this point we know that will execute a read cmd so first of all we need to ensure that a refresh is made if needed
+                        try {
+                            let lastRefresh = lastRefreshes[req.params.dbName];
+                            if (!lastRefresh || LAST_REFRESH_TIMEOUT < Date.now() - lastRefresh) {
+                                enclaves[req.params.dbName].refreshAsync();
+                                lastRefreshes[req.params.dbName] = Date.now();
+                            }
+                        } catch (err) {
+                            //we ignore any refresh errors for now...
+                        }
                     }
 
                     const cb = (err, result) => {
