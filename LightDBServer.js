@@ -203,7 +203,7 @@ function LightDBServer(config, callback) {
                         return res.end();
                     }
 
-                    if(server.readOnlyModeActive() ) {
+                    if(server.readOnlyModeActive ) {
                         if (enclaves[req.params.dbName].allowedInReadOnlyMode &&
                             !enclaves[req.params.dbName].allowedInReadOnlyMode([command.commandName])) {
 
