@@ -24,7 +24,10 @@ function LightDBServer(config, callback) {
     lightDBPort = lightDBPort || 8081;
 
     const server = new Server();
-    server.config = config;
+    server.config = config.serverConfig || config;
+    if (!config.storage) {
+        config.storage = lightDBStorage;
+    }
     const enclaves = {};
     const path = require("path");
     const fs = require("fs");
