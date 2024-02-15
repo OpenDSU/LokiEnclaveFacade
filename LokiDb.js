@@ -183,6 +183,8 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         for (let prop in record) {
             doc[prop] = record[prop];
         }
+
+        doc.__timestamp = Date.now();
         let result;
         try {
             result = table.update(doc);
