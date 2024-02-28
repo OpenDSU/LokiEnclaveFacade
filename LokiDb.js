@@ -292,7 +292,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(undefined, []);
         }
         let direction = false;
-        if (sort === "desc") {
+        if (sort === "desc" || sort === "dsc") {
             direction = true;
         }
 
