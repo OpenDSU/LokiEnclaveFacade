@@ -42,6 +42,17 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
     });
 
+    this.close = async () => {
+        return new Promise((resolve, reject) => {
+            db.close((err) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve();
+            });
+        });
+    }
+
     this.refresh = function (callback) {
         db.loadDatabaseInternal(undefined, callback);
     }
@@ -73,7 +84,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     this.revokeWriteAccess = (callback) => {
         persistence.ungrant(WRITE_ACCESS, WILDCARD, callback);
     }
-    
+
     this.grantReadAccess = (callback) => {
         persistence.grant(READ_ACCESS, WILDCARD, callback);
     }
@@ -206,9 +217,9 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(undefined);
         }
 
-        try{
+        try {
             table.findAndRemove({'pk': pk});
-        }catch(err){
+        } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
@@ -403,13 +414,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
                 return callback(err);
             }
 
-/*            result = result.filter(item => {
-                if(typeof item.$loki !== "undefined"){
-                    return true;
-                }
-                logger.warn("A message was filtered out because wrong loki document structure");
-                return false;
-            });*/
+            /*            result = result.filter(item => {
+                            if(typeof item.$loki !== "undefined"){
+                                return true;
+                            }
+                            logger.warn("A message was filtered out because wrong loki document structure");
+                            return false;
+                        });*/
 
             result = result.map(item => {
                 return item.pk
