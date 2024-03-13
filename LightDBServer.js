@@ -230,7 +230,7 @@ function LightDBServer(config, callback) {
                     const cb = (err, result) => {
                         if (err) {
                             res.statusCode = 500;
-                            logger.error(`Error while executing command ${command.commandName}`, err);
+                            logger.debug(`Error while executing command ${command.commandName}`, err);
                             res.write(`Error while executing command ${command.commandName}: ${err.message}`);
                             return res.end();
                         }
