@@ -219,7 +219,7 @@ function LightDBServer(config, callback) {
                         try {
                             let lastRefresh = lastRefreshes[req.params.dbName];
                             if (!lastRefresh || LAST_REFRESH_TIMEOUT < Date.now() - lastRefresh) {
-                                enclaves[req.params.dbName].refreshAsync();
+                                await enclaves[req.params.dbName].refreshAsync();
                                 lastRefreshes[req.params.dbName] = Date.now();
                             }
                         } catch (err) {
