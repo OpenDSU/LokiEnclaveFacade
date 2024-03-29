@@ -208,7 +208,7 @@ function LightDBServer(config, callback) {
 
                     if(server.readOnlyModeActive ) {
                         if (enclaves[req.params.dbName].allowedInReadOnlyMode &&
-                            !enclaves[req.params.dbName].allowedInReadOnlyMode([command.commandName])) {
+                            !enclaves[req.params.dbName].allowedInReadOnlyMode(command.commandName)) {
 
                             res.statusCode = 403;
                             res.end();

@@ -16,8 +16,9 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     }
 
     this.refreshAsync =  () => {
+        let self = this;
         return new Promise((resolve, reject) => {
-            this.refresh((err)=>{
+            self.storageDB.refresh((err)=>{
                 if(err){
                     return reject(err);
                 }
