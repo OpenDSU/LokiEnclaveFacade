@@ -190,9 +190,17 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
 
     this.updateRecord = function (tableName, pk, record, callback) {
         let table = db.getCollection(tableName);
-        const doc = table.by("pk", pk);
-        for (let prop in record) {
-            doc[prop] = record[prop];
+        let doc;
+        try {
+            doc = table.by("pk", pk);
+            for (let prop in record) {
+                doc[prop] = record[prop];
+            }
+        } catch (err) {
+            logger.error(err);
+            logger.error(`Failed to update ${pk} in table ${tableName}`);
+            logger.error(`Record: ${JSON.stringify(record)}`);
+            return callback(createOpenDSUErrorWrapper(`Could not update record in table ${tableName}`, err));
         }
 
         doc.__timestamp = Date.now();

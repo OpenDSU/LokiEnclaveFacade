@@ -253,7 +253,13 @@ function LightDBServer(config, callback) {
                         logger.debug(`Executing command ${command.commandName} with args`, args.slice(0, -1));
                         console.time(label);
                     }
-                    enclaves[req.params.dbName][command.commandName](...args);
+
+                    // trying to capture any sync error that might occur during the execution of the command
+                    try {
+                        enclaves[req.params.dbName][command.commandName](...args);
+                    }catch (e) {
+                        cb(e);
+                    }
                 });
             }
             if(args[0] === $$.SYSTEM_IDENTIFIER){
