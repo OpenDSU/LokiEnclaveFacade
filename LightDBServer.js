@@ -227,6 +227,7 @@ function LightDBServer(config, callback) {
                         }
                     }
 
+                    const label = `Executing command ${command.commandName} with args ${args} on database ${req.params.dbName}`;
                     const cb = (err, result) => {
                         if (err) {
                             res.statusCode = 500;
@@ -241,16 +242,16 @@ function LightDBServer(config, callback) {
                         }
 
                         if(process.env.DEV === "true"){
-                            console.timeEnd(`Executing command ${command.commandName}`);
-                            logger.debug(`Command ${command.commandName} executed successfully`);
+                            console.timeEnd(label);
+                            logger.debug(`Command ${command.commandName} with args ${args.slice(0, -1)} on database ${req.params.dbName} executed successfully`);
                         }
                         res.end();
                     }
 
                     args.push(cb);
                     if(process.env.DEV === "true"){
-                        logger.debug(`Executing command ${command.commandName} with args`, args);
-                        console.time(`Executing command ${command.commandName}`);
+                        logger.debug(`Executing command ${command.commandName} with args`, args.slice(0, -1));
+                        console.time(label);
                     }
                     enclaves[req.params.dbName][command.commandName](...args);
                 });
