@@ -241,18 +241,10 @@ function LightDBServer(config, callback) {
                             res.write(JSON.stringify(result));
                         }
 
-                        if(process.env.DEV === "true"){
-                            console.timeEnd(label);
-                            logger.debug(`Command ${command.commandName} with args ${args.slice(0, -1)} on database ${req.params.dbName} executed successfully`);
-                        }
                         res.end();
                     }
 
                     args.push(cb);
-                    if(process.env.DEV === "true"){
-                        logger.debug(`Executing command ${command.commandName} with args`, args.slice(0, -1));
-                        console.time(label);
-                    }
 
                     // trying to capture any sync error that might occur during the execution of the command
                     try {

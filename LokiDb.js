@@ -198,8 +198,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             }
         } catch (err) {
             logger.error(err);
-            logger.error(`Failed to update ${pk} in table ${tableName}`);
-            logger.error(`Record: ${JSON.stringify(record)}`);
+            logger.debug(`Failed to update ${pk} in table ${tableName}`);
             return callback(createOpenDSUErrorWrapper(`Could not update record in table ${tableName}`, err));
         }
 
