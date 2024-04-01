@@ -239,10 +239,19 @@ function LightDBServer(config, callback) {
                         if(typeof result !== "undefined"){
                             res.write(JSON.stringify(result));
                         }
+
+                        if(process.env.DEV === "true"){
+                            console.timeEnd(`Executing command ${command.commandName}`);
+                            logger.debug(`Command ${command.commandName} executed successfully`);
+                        }
                         res.end();
                     }
 
                     args.push(cb);
+                    if(process.env.DEV === "true"){
+                        logger.debug(`Executing command ${command.commandName} with args`, args);
+                        console.time(`Executing command ${command.commandName}`);
+                    }
                     enclaves[req.params.dbName][command.commandName](...args);
                 });
             }
