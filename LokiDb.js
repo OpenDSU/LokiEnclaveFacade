@@ -227,7 +227,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
 
         let record = table.findOne({'pk': pk});
         if (!record) {
-            return callback(undefined);
+            return callback(undefined, {pk});
         }
 
         try {
