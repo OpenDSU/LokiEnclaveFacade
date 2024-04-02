@@ -193,6 +193,12 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         let doc;
         try {
             doc = table.by("pk", pk);
+            if(!doc && record.__fallbackToInsert){
+                //this __fallbackToInsert e.g. is used by fixedURL component
+                record.__fallbackToInsert = undefined;
+                delete record.__fallbackToInsert;
+                return this.insertRecord(tableName, pk, record, callback);
+            }
             for (let prop in record) {
                 doc[prop] = record[prop];
             }
