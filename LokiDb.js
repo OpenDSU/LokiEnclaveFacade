@@ -393,7 +393,6 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             callback = ensureUniqueness;
             ensureUniqueness = false;
         }
-        let queue = db.getCollection(queueName) || db.addCollection(queueName);
         const crypto = require("opendsu").loadApi("crypto");
         const hash = crypto.sha256(encryptedObject);
         let pk = hash;

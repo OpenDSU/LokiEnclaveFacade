@@ -227,7 +227,6 @@ function LightDBServer(config, callback) {
                         }
                     }
 
-                    const label = `Executing command ${command.commandName} with args ${args} on database ${req.params.dbName}`;
                     const cb = (err, result) => {
                         if (err) {
                             res.statusCode = 500;
