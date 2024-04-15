@@ -8,9 +8,6 @@ function getEnclaveDB(dbName) {
     return createLokiEnclaveFacadeInstance(dbName);
 }
 
-
-const TABLE_NAME = "testTable";
-const DID = "DID_newPk";
 assert.callback("Enclave default db insert test", (testFinishCallback) => {
     dc.createTestFolder("enclaveDBTest", async function (err, folder) {
         const DOMAIN = "default";

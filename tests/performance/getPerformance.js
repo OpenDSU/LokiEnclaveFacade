@@ -1,8 +1,6 @@
 require("../../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
-const fs = require("fs");
-const lokiEnclaveFacadeModule = require("../../index");
 const assert = dc.assert;
 function getEnclaveDB(dbName, autoSaveInterval) {
     const lokiEnclaveFacadeModule = require("../../index");

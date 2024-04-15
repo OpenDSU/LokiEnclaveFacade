@@ -1,7 +1,6 @@
 require(" ../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
-const {createLokiEnclaveFacadeInstance} = require("../index");
 const assert = dc.assert;
 function getEnclaveDB(dbName, autoSaveInterval) {
   let createLokiEnclaveFacadeInstance = require("../index.js").createLokiEnclaveFacadeInstance;
@@ -20,7 +19,7 @@ assert.callback("Enclave dafault db insert test", (testFinishCallback) => {
       while (new Date().getTime() - initTime < duration) {
         testDb.insertRecord("DID", "testTable", Math.random(), {
           name: `test`,
-        }, (err, data) => {
+        }, () => {
         });
       }
     }

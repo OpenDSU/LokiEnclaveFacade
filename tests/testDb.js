@@ -1,7 +1,6 @@
 require(" ../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
-const {createLokiEnclaveFacadeInstance} = require("../index");
 const assert = dc.assert;
 const numberOfREcords = 5;
 
@@ -15,7 +14,6 @@ const TABLE_NAME = "testTable";
 const DID = "DID_newPk";
 assert.callback("Enclave default db insert test", (testFinishCallback) => {
     dc.createTestFolder("enclaveDBTest", async function (err, folder) {
-        const fs = require("fs");
         const path = require("path");
         let dbPath = path.join(folder, "test_db");
         // fs.mkdirSync(dbPath, {recursive: true});
