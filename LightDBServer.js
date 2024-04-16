@@ -58,6 +58,7 @@ function LightDBServer(config, callback) {
         if (err) {
             if (lightDBDynamicPort && err.code === 'EADDRINUSE') {
                 logger.debug("Failed to listen on port <" + lightDBPort + ">", err);
+
                 function getRandomPort() {
                     const min = 9000;
                     const max = 65535;
@@ -206,7 +207,7 @@ function LightDBServer(config, callback) {
                         return res.end();
                     }
 
-                    if(server.readOnlyModeActive ) {
+                    if (server.readOnlyModeActive) {
                         if (enclaves[req.params.dbName].allowedInReadOnlyMode &&
                             !enclaves[req.params.dbName].allowedInReadOnlyMode(command.commandName)) {
 
@@ -236,7 +237,7 @@ function LightDBServer(config, callback) {
                         }
 
                         res.statusCode = 200;
-                        if(typeof result !== "undefined"){
+                        if (typeof result !== "undefined") {
                             res.write(JSON.stringify(result));
                         }
 
@@ -248,12 +249,12 @@ function LightDBServer(config, callback) {
                     // trying to capture any sync error that might occur during the execution of the command
                     try {
                         enclaves[req.params.dbName][command.commandName](...args);
-                    }catch (e) {
+                    } catch (e) {
                         cb(e);
                     }
                 });
             }
-            if(args[0] === $$.SYSTEM_IDENTIFIER){
+            if (args[0] === $$.SYSTEM_IDENTIFIER) {
                 didDocument = $$.SYSTEM_DID_DOCUMENT;
                 return __verifySignatureAndExecuteCommand();
             }
@@ -291,7 +292,7 @@ function LightDBServer(config, callback) {
                     res.end();
                     return;
                 }
-                if(enclaves[dbName]){
+                if (enclaves[dbName]) {
                     logger.error("Race condition detected and resolved during lightDB database creation");
                     res.statusCode = 409;
                     res.write("Already exists");

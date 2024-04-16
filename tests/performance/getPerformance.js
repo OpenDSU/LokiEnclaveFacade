@@ -2,6 +2,7 @@ require("../../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
 const assert = dc.assert;
+
 function getEnclaveDB(dbName, autoSaveInterval) {
     const lokiEnclaveFacadeModule = require("../../index");
     let createLokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance;
@@ -12,10 +13,9 @@ async function insertRecords(testDb, number) {
     const ids = []
     for (let i = 0; i < number; i++) {
         try {
-            await $$.promisify(testDb.insertRecord)("DID", "testTable", i, { name: `test` });
+            await $$.promisify(testDb.insertRecord)("DID", "testTable", i, {name: `test`});
             ids.push(i);
-        }
-        catch {
+        } catch {
         }
     }
     return ids;

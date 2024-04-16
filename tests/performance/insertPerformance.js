@@ -3,11 +3,13 @@ require("../../../../builds/output/testsRuntime");
 const dc = require("double-check");
 const fs = require("fs");
 const assert = dc.assert;
+
 function getEnclaveDB(dbName, autoSaveInterval) {
     const lokiEnclaveFacadeModule = require("../../index");
     let createLokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance;
     return createLokiEnclaveFacadeInstance(dbName, autoSaveInterval, lokiEnclaveFacadeModule.Adaptors.FS);
 }
+
 async function insertRecords(testDb, number) {
     const start = new Date().getTime();
     let i = 0;
@@ -16,9 +18,8 @@ async function insertRecords(testDb, number) {
     while (i < number) {
         const timeStart = new Date().getTime();
         try {
-            await $$.promisify(testDb.insertRecord)("DID", "testTable", Math.random(), { name: `test` });
-        }
-        catch {
+            await $$.promisify(testDb.insertRecord)("DID", "testTable", Math.random(), {name: `test`});
+        } catch {
             failed += 1;
         }
         const timeEnd = new Date().getTime();
@@ -27,7 +28,7 @@ async function insertRecords(testDb, number) {
         maxTime = maxTime < time ? time : maxTime;
     }
     const end = new Date().getTime();
-    return { fails: failed, totalTime: end - start, maxTime: maxTime }
+    return {fails: failed, totalTime: end - start, maxTime: maxTime}
 }
 
 assert.callback("Performance - Enclave db insert test", (testFinishCallback) => {
@@ -37,7 +38,7 @@ assert.callback("Performance - Enclave db insert test", (testFinishCallback) => 
 
         testDb.createCollection("", "testTable", ["pk"])
 
-        let stream = fs.createWriteStream("./insert-performance.txt", { flags: 'a' });
+        let stream = fs.createWriteStream("./insert-performance.txt", {flags: 'a'});
         const responses = [];
         const number = 200000;
         stream.write("\n\nStarted tests for FS Adaptor with indices - [PK]\n\n");

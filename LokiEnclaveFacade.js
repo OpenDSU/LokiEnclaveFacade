@@ -15,11 +15,11 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.refresh(callback);
     }
 
-    this.refreshAsync =  () => {
+    this.refreshAsync = () => {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.storageDB.refresh((err)=>{
-                if(err){
+            self.storageDB.refresh((err) => {
+                if (err) {
                     return reject(err);
                 }
                 resolve();
@@ -108,7 +108,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.getCollections(callback);
     }
 
-    this.createCollection =  (forDID, tableName, indicesList, callback) => {
+    this.createCollection = (forDID, tableName, indicesList, callback) => {
         if (typeof indicesList === "function") {
             callback = indicesList;
             indicesList = undefined;
@@ -116,7 +116,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.createCollection(tableName, indicesList, callback);
     }
 
-    this.allowedInReadOnlyMode = function (functionName){
+    this.allowedInReadOnlyMode = function (functionName) {
         let readOnlyFunctions = ["getCollections",
             "listQueue",
             "queueSize",

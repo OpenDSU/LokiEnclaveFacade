@@ -2,6 +2,7 @@ require("../../../../builds/output/testsRuntime");
 
 const dc = require("double-check");
 const assert = dc.assert;
+
 function getEnclaveDB(dbName, autoSaveInterval) {
     const lokiEnclaveFacadeModule = require("../../index");
     let createLokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance;
@@ -19,8 +20,7 @@ async function insertRecords(testDb, number) {
                 prob: Math.random()
             });
             ids.push(i);
-        }
-        catch {
+        } catch {
         }
     }
     return ids;
@@ -33,14 +33,14 @@ assert.callback("Performance - Enclave db insert test", (testFinishCallback) => 
         const number = 100000;
 
         await insertRecords(testDb, number);
-        
+
 
         // Without indices
         let start = new Date().getTime();
         let filterRecords = await $$.promisify(testDb.filter)("", "testTable", ["age > 50", "account <= 100000", "prob > 0.7"]);
         let time = new Date().getTime() - start;
         console.log(`No indices - Retrieved ${filterRecords.length} records in ${time}ms`);
-        
+
         testDb.addIndex("", "testTable", "age");
         start = new Date().getTime();
         filterRecords = await $$.promisify(testDb.filter)("", "testTable", ["age > 50", "account <= 100000", "prob > 0.7"]);

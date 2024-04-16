@@ -38,7 +38,7 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         nr = await $$.promisify(testDb.count)(TABLE_NAME)
         assert.equal(nr, numberOfREcords + 1);
 
-        let data =await $$.promisify(testDb.getRecord)(DID, TABLE_NAME, "newPk");
+        let data = await $$.promisify(testDb.getRecord)(DID, TABLE_NAME, "newPk");
         assert.equal(data.name, "test_new");
 
         await $$.promisify(testDb.updateRecord)(DID, TABLE_NAME, "newPk", {name: "newName", "id": "someID"});
