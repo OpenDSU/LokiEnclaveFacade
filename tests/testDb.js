@@ -50,7 +50,7 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         assert.equal(data.id, "someID");
 
         try {
-            data = await $$.promisify(testDb.getRecord)(DID, "wrongTable", "newPk")
+            await $$.promisify(testDb.getRecord)(DID, "wrongTable", "newPk")
         } catch (e) {
             assert.notEqual(e, null);
         }
