@@ -580,7 +580,12 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
                     return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
                 }
 
-                const signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+                let signature;
+                try{
+                    signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+                }catch(err){
+                    return callback(err);
+                }
                 callback(undefined, signature);
             });
         }
