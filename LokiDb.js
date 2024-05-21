@@ -22,7 +22,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
-    const AUTOSAVE_INTERVAL = 100;
+    const AUTOSAVE_INTERVAL = 10000;
     const adapter = adaptorConstructorFunction === undefined ? new Adaptors.STRUCTURED() : new adaptorConstructorFunction();
 
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
