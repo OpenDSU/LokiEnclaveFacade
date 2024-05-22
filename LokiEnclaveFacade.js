@@ -1,9 +1,10 @@
 function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunction) {
+    const logger = $$.getLogger("LokiEnclaveFacade", "LokiEnclaveFacade.js");
     const LokiDb = require("./LokiDb");
     const openDSU = require("opendsu");
     const aclAPI = require("acl-magic");
     const utils = openDSU.loadAPI("utils");
-
+    logger.info("Creating LokiEnclaveFacade instance");
     const EnclaveMixin = openDSU.loadAPI("enclave").EnclaveMixin;
     EnclaveMixin(this);
 
@@ -11,8 +12,12 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         return await this.storageDB.close();
     }
 
-    this.refresh = function (callback) {
+    this.refresh =  (callback) => {
         this.storageDB.refresh(callback);
+    }
+
+    this.saveDatabase =  (forDID, callback) => {
+        this.storageDB.saveDatabase(callback);
     }
 
     this.refreshAsync =  () => {
