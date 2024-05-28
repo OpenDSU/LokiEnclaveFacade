@@ -12,5 +12,5 @@ const createLightDBServerInstance = (config, callback) => {
 module.exports = {
     createLokiEnclaveFacadeInstance,
     createLightDBServerInstance,
-    Adaptors: require("./adaptors")
+    Adapters: require("./adapters")
 }
