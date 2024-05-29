@@ -1,9 +1,23 @@
 const loki = require('../../lib/lokijs/src/lokijs');
-const LokiFsStructuredAdapter = require('../../lib/lokijs/src/loki-fs-structured-adapter');
-const LokiFsSyncAdapter = require('../../lib/lokijs/src/loki-fs-sync-adapter');
-const LokiFsAdapter = require('../../lib/lokijs/src/lokijs').LokiFsAdapter;
-const fs = require('fs');
+const AWSS3SyncAdapter = require('../../lib/lokijs/src/aws-s3-sync-adapter');
+process.env.AWS_ACCESS_KEY_ID = ""
+process.env.AWS_SECRET_ACCESS_KEY = ""
+process.env.AWS_SESSION_TOKEN = ""
+process.env.AWS_REGION = ""
+process.env.AWS_BUCKET = ""
+const AWS = require('../../lib/lokijs/node_modules/aws-sdk');
+const options = {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    sessionToken: process.env.AWS_SESSION_TOKEN,
+    region: process.env.AWS_REGION,
+    bucket: process.env.AWS_BUCKET,
+    AWS
+}
 
+const numDocs = 100000;
+const fileNameBase = 'test-loki-db';
+const filename = `${fileNameBase}-aws-s3-sync-adapter.json`;
 const promisify = (fn, instance) => {
     return (...args) => {
         return new Promise((resolve, reject) => {
@@ -73,27 +87,25 @@ async function measurePerformance(adapterName, adapter, filename, collections, n
     const users = db.getCollection('users');
     users.find({age: {'$gt': 50}});
     console.timeEnd(`${adapterName} - Query`);
-    fs.unlinkSync(filename);
+    const s3 = new AWS.S3({
+        accessKeyId: options.accessKeyId,
+        secretAccessKey: options.secretAccessKey,
+        sessionToken: options.sessionToken,
+        region: options.region
+    });
+    const params = {
+        Bucket: options.bucket,
+        Key: filename
+    }
+    await promisify(s3.deleteObject, s3)(params);
 }
 
-const numDocs = 100000;
-const fileNameBase = 'test-loki-db';
 
 setTimeout(async () => {
     console.log(`Starting performance tests with ${numDocs} documents...\n`);
     const collections = ['users', 'posts', 'comments', 'likes', 'followers', 'messages'];
-    // LokiFsAdapter (default)
-    await measurePerformance('LokiFsAdapter', new LokiFsAdapter(), `${fileNameBase}-default.json`, collections, numDocs);
 
-    // LokiFsSyncAdapter
-    await measurePerformance('LokiFsSyncAdapter', new LokiFsSyncAdapter(), `${fileNameBase}-sync.json`, collections, numDocs);
-
-    // LokiFsStructuredAdapter
-    try {
-        await measurePerformance('LokiFsStructuredAdapter', new LokiFsStructuredAdapter(), `${fileNameBase}-structured.json`, collections, numDocs);
-    } catch (e) {
-        console.error('LokiFsStructuredAdapter failed:', e);
-    }
+    await measurePerformance('AWSS3SyncAdapter', new AWSS3SyncAdapter(options), filename, collections, numDocs);
     console.log('\nDone!');
     process.exit(0);
 }, 1000);
