@@ -2,6 +2,8 @@ const loki = require('../../lib/lokijs/src/lokijs');
 const LokiFsStructuredAdapter = require('../../lib/lokijs/src/loki-fs-structured-adapter');
 const LokiFsSyncAdapter = require('../../lib/lokijs/src/loki-fs-sync-adapter');
 const LokiFsAdapter = require('../../lib/lokijs/src/lokijs').LokiFsAdapter;
+const LokiPartitioningAdapter = loki.LokiPartitioningAdapter;
+const lokiPartitioningAdapter = new LokiPartitioningAdapter(new LokiFsAdapter());
 const fs = require('fs');
 
 const promisify = (fn, instance) => {
@@ -51,6 +53,8 @@ function addDocuments(db, collectionName, numDocs) {
 }
 
 async function measurePerformance(adapterName, adapter, filename, collections, numDocs) {
+    const folder = require('path').dirname(filename);
+    fs.mkdirSync(folder, {recursive: true});
     console.time(`${adapterName} - Setup`);
     let db = initDatabase(adapter, filename)
     console.timeEnd(`${adapterName} - Setup`);
@@ -70,14 +74,16 @@ async function measurePerformance(adapterName, adapter, filename, collections, n
     console.timeEnd(`${adapterName} - Load`);
 
     console.time(`${adapterName} - Query`);
-    const users = db.getCollection('users');
+    const users = db.getCollection(collections[0]);
     users.find({age: {'$gt': 50}});
     console.timeEnd(`${adapterName} - Query`);
-    fs.unlinkSync(filename);
+    fs.rmSync(folder, {recursive: true, force: true});
 }
 
 const numDocs = 100000;
-const fileNameBase = 'test-loki-db';
+const folder = 'test-loki-db';
+fs.mkdirSync(folder, {recursive: true});
+const fileNameBase = `${folder}/loki`;
 
 setTimeout(async () => {
     console.log(`Starting performance tests with ${numDocs} documents...\n`);
@@ -88,12 +94,11 @@ setTimeout(async () => {
     // LokiFsSyncAdapter
     await measurePerformance('LokiFsSyncAdapter', new LokiFsSyncAdapter(), `${fileNameBase}-sync.json`, collections, numDocs);
 
+    // LokiPartitioningAdapter
+    await measurePerformance('lokiPartitioningAdapter', lokiPartitioningAdapter, `${fileNameBase}-lokiPartitioningAdapter.json`, collections, numDocs);
+
     // LokiFsStructuredAdapter
-    try {
-        await measurePerformance('LokiFsStructuredAdapter', new LokiFsStructuredAdapter(), `${fileNameBase}-structured.json`, collections, numDocs);
-    } catch (e) {
-        console.error('LokiFsStructuredAdapter failed:', e);
-    }
+    await measurePerformance('LokiFsStructuredAdapter', new LokiFsStructuredAdapter(), `${fileNameBase}-structured.json`, collections, numDocs);
     console.log('\nDone!');
     process.exit(0);
-}, 1000);
+}, 2000);
