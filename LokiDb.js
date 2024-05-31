@@ -1,4 +1,4 @@
-const Adaptors = require("./adapters.js");
+const Adapters = require("./adapters.js");
 const loki = require("./lib/lokijs/src/lokijs.js");
 
 let filterOperationsMap = {
@@ -23,7 +23,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
     const AUTOSAVE_INTERVAL = 5000;
-    const adapter = adaptorConstructorFunction === undefined ? new loki.LokiFsAdapter() : new adaptorConstructorFunction();
+    const adapter = adaptorConstructorFunction === undefined ? new loki.LokiPartitioningAdapter(new loki.LokiFsAdapter()) : new adaptorConstructorFunction();
 
     logger.info(`Initializing Loki database ${rootFolder}`);
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
@@ -677,5 +677,5 @@ function initialized() {
     this.finishInitialisation();
 }
 
-LokiDb.prototype.Adaptors = Adaptors;
+LokiDb.prototype.Adapters = Adapters;
 module.exports = LokiDb;
