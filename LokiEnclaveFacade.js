@@ -1,9 +1,10 @@
 function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunction) {
+    const logger = $$.getLogger("LokiEnclaveFacade", "LokiEnclaveFacade.js");
     const LokiDb = require("./LokiDb");
     const openDSU = require("opendsu");
     const aclAPI = require("acl-magic");
     const utils = openDSU.loadAPI("utils");
-
+    logger.info("Creating LokiEnclaveFacade instance");
     const EnclaveMixin = openDSU.loadAPI("enclave").EnclaveMixin;
     EnclaveMixin(this);
 
@@ -11,15 +12,19 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         return await this.storageDB.close();
     }
 
-    this.refresh = function (callback) {
+    this.refresh =  (callback) => {
         this.storageDB.refresh(callback);
     }
 
-    this.refreshAsync = () => {
+    this.saveDatabase =  (forDID, callback) => {
+        this.storageDB.saveDatabase(callback);
+    }
+
+    this.refreshAsync =  () => {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.storageDB.refresh((err) => {
-                if (err) {
+            self.storageDB.refresh((err)=>{
+                if(err){
                     return reject(err);
                 }
                 resolve();
@@ -108,7 +113,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.getCollections(callback);
     }
 
-    this.createCollection = (forDID, tableName, indicesList, callback) => {
+    this.createCollection =  (forDID, tableName, indicesList, callback) => {
         if (typeof indicesList === "function") {
             callback = indicesList;
             indicesList = undefined;
@@ -116,7 +121,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.createCollection(tableName, indicesList, callback);
     }
 
-    this.allowedInReadOnlyMode = function (functionName) {
+    this.allowedInReadOnlyMode = function (functionName){
         let readOnlyFunctions = ["getCollections",
             "listQueue",
             "queueSize",

@@ -1,4 +1,4 @@
-const Adaptors = require("./adaptors.js");
+const Adapters = require("./adapters.js");
 const loki = require("./lib/lokijs/src/lokijs.js");
 
 let filterOperationsMap = {
@@ -12,19 +12,20 @@ let filterOperationsMap = {
 }
 
 function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
+    const logger = $$.getLogger("LokiDb", "lokiDb");
     const openDSU = require("opendsu");
     const aclAPI = require("acl-magic");
     const keySSISpace = openDSU.loadAPI("keyssi")
     const w3cDID = openDSU.loadAPI("w3cdid")
     const utils = openDSU.loadAPI("utils");
     const CryptoSkills = w3cDID.CryptographicSkills;
-    const logger = $$.getLogger("LokiEnclaveFacade", "lokiEnclaveFacade");
     const KEY_SSIS_TABLE = "keyssis";
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
-    const AUTOSAVE_INTERVAL = 100;
-    const adapter = adaptorConstructorFunction === undefined ? new Adaptors.STRUCTURED() : new adaptorConstructorFunction();
+    const AUTOSAVE_INTERVAL = 5000;
+    const adapter = adaptorConstructorFunction === undefined ? new loki.LokiPartitioningAdapter(new loki.LokiFsAdapter()) : new adaptorConstructorFunction();
 
+    logger.info(`Initializing Loki database ${rootFolder}`);
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
         throw Error("Root folder was not specified for LokiEnclaveFacade");
@@ -39,6 +40,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             if (err) {
                 logger.error(`Failed to save db on disk.`, err)
             }
+            logger.info(`Loki database ${rootFolder} saved on disk.`);
         }
     });
 
@@ -54,8 +56,20 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
 
     this.refresh = function (callback) {
+        logger.info(`Refreshing database ${rootFolder}`);
         db.loadDatabaseInternal(undefined, callback);
     }
+
+    this.saveDatabase = function (callback) {
+        logger.info(`Saving Loki database ${rootFolder}`);
+        db.saveDatabase((err)=>{
+            if(err){
+                return callback(err);
+            }
+            callback(undefined, {message: `Database ${rootFolder} saved`});
+        });
+    }
+
     const WRITE_ACCESS = "write";
     const READ_ACCESS = "read";
     const WILDCARD = "*";
@@ -171,7 +185,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
 
         if (foundRecord) {
             let error = `A record with pk ${pk} already exists in ${tableName}`
-            console.log(error);
+            logger.log(error);
             return callback(createOpenDSUErrorWrapper(error));
         }
         let result;
@@ -181,7 +195,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
                 "__timestamp": record.__timestamp || Date.now()
             });
         } catch (err) {
-            console.log(`Failed to insert ${pk} into table ${tableName}`, err);
+            logger.log(`Failed to insert ${pk} into table ${tableName}`, err);
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
@@ -580,7 +594,12 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
                     return callback(createOpenDSUErrorWrapper(`Failed to get private info for did ${didThatIsSigning.getIdentifier()}`, err));
                 }
 
-                const signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+                let signature;
+                try{
+                    signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
+                }catch(err){
+                    return callback(err);
+                }
                 callback(undefined, signature);
             });
         }
@@ -658,5 +677,5 @@ function initialized() {
     this.finishInitialisation();
 }
 
-LokiDb.prototype.Adaptors = Adaptors;
+LokiDb.prototype.Adapters = Adapters;
 module.exports = LokiDb;

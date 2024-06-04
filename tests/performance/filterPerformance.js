@@ -6,7 +6,7 @@ const assert = dc.assert;
 function getEnclaveDB(dbName, autoSaveInterval) {
     const lokiEnclaveFacadeModule = require("../../index");
     let createLokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance;
-    return createLokiEnclaveFacadeInstance(dbName, autoSaveInterval, lokiEnclaveFacadeModule.Adaptors.FS);
+    return createLokiEnclaveFacadeInstance(dbName, autoSaveInterval, lokiEnclaveFacadeModule.Adapters.FS);
 }
 
 
