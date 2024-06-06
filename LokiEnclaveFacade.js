@@ -12,12 +12,27 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         return await this.storageDB.close();
     }
 
-    this.refresh =  (callback) => {
+    this.refresh =  (forDID, callback) => {
         this.storageDB.refresh(callback);
     }
 
     this.saveDatabase =  (forDID, callback) => {
         this.storageDB.saveDatabase(callback);
+    }
+
+    this.removeCollection =  (forDID, tableName, callback) => {
+        this.storageDB.removeCollection(tableName, callback);
+    }
+
+    this.removeCollectionAsync =  (forDID, tableName) => {
+        return new Promise((resolve, reject) => {
+            this.storageDB.removeCollection(tableName, (err) => {
+                if(err){
+                    return reject(err);
+                }
+                resolve();
+            });
+        });
     }
 
     this.refreshAsync =  () => {
@@ -109,7 +124,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         return this.deleteRecord(forDID, queueName, hash, callback)
     }
 
-    this.getCollections = (callback) => {
+    this.getCollections = (forDID, callback) => {
         this.storageDB.getCollections(callback);
     }
 

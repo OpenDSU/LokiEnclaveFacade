@@ -55,12 +55,12 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         });
     }
 
-    this.refresh = function (callback) {
+    this.refresh =  (callback) => {
         logger.info(`Refreshing database ${rootFolder}`);
         db.loadDatabaseInternal(undefined, callback);
     }
 
-    this.saveDatabase = function (callback) {
+    this.saveDatabase = (callback) => {
         logger.info(`Saving Loki database ${rootFolder}`);
         db.saveDatabase((err)=>{
             if(err){
@@ -68,6 +68,16 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             }
             callback(undefined, {message: `Database ${rootFolder} saved`});
         });
+    }
+
+    // add removeCollection method
+    this.removeCollection = (collectionName, callback) => {
+        db.removeCollection(collectionName);
+        this.saveDatabase(callback);
+    }
+
+    this.listCollections = () => {
+        return db.listCollections();
     }
 
     const WRITE_ACCESS = "write";
