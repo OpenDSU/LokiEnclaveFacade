@@ -39,6 +39,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         autosaveCallback: function (err) {
             if (err) {
                 logger.error(`Failed to save db on disk.`, err)
+                return;
             }
             logger.info(`Loki database ${rootFolder} saved on disk.`);
         }
