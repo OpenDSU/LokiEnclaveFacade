@@ -232,7 +232,7 @@ function LightDBServer(config, callback) {
                         if (err) {
                             res.statusCode = 500;
                             logger.debug(`Error while executing command ${command.commandName}`, err);
-                            res.write(`Error while executing command ${command.commandName}: ${err.message}`);
+                            res.write(`Error while executing command`);
                             return res.end();
                         }
 
@@ -263,7 +263,7 @@ function LightDBServer(config, callback) {
                 if (err) {
                     logger.error(`Failed to resolve DID ${args[0]}`, err);
                     res.statusCode = 500;
-                    res.write(`Failed to resolve DID ${args[0]}`);
+                    res.write(`Failed to resolve DID`);
                     return res.end();
                 }
 
