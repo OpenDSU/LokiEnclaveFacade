@@ -279,21 +279,40 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         callback(null, result)
     }
 
-    function __parseQuery(filterConditions) {
-        let lokiQuery = {}
-        if (!filterConditions) {
-            return lokiQuery;
+    function convertConditionsToLokiQuery(conditions) {
+        if (!conditions || conditions.length === 0) {
+            return {};
         }
+        // Array to store the conditions that will go into the $and structure
+        const andConditions = [];
 
-        filterConditions.forEach(condition => {
-            const splitCondition = condition.split(" ");
-            const field = splitCondition[0];
-            const operator = splitCondition[1];
-            const value = splitCondition[2];
-            lokiQuery[field] = {};
-            lokiQuery[field][`${filterOperationsMap[operator]}`] = value;
-        })
-        return lokiQuery;
+        conditions.forEach(condition => {
+            // Update regex pattern to capture more complex patterns for LIKE
+            const match = condition.match(/^(\w+)\s*(>=|<=|=|==|!=|<>|>|<|like)\s*(.*)$/i);
+            if (!match) {
+                throw new Error(`Invalid condition: ${condition}`);
+            }
+
+            const [, field, operator, value] = match;
+            const lokiOperator = filterOperationsMap[operator.toLowerCase()];
+
+            let conditionObject = {};
+
+            if (operator.toLowerCase() === 'like') {
+                // Process LIKE condition, and allow complex regex patterns (no quotes required)
+                conditionObject[field] = { [lokiOperator]: new RegExp(value.trim(), 'i') }; // case-insensitive regex
+            } else {
+                // Process other operators, handling numeric and string cases
+                const numericValue = parseFloat(value);
+                conditionObject[field] = {
+                    [lokiOperator]: isNaN(numericValue) ? value.replace(/['"]/g, '').trim() : numericValue
+                };
+            }
+
+            andConditions.push(conditionObject);
+        });
+
+        return { $and: andConditions };
     }
 
     function __getSortingField(filterConditions) {
@@ -334,7 +353,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         const sortingField = __getSortingField(filterConditions);
-        filterConditions = __parseQuery(filterConditions);
+        filterConditions = convertConditionsToLokiQuery(filterConditions);
 
         let table = db.getCollection(tableName);
         if (!table) {
