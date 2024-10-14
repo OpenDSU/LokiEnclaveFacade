@@ -8,12 +8,22 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
     const EnclaveMixin = openDSU.loadAPI("enclave").EnclaveMixin;
     EnclaveMixin(this);
 
+    let refreshInProgress = false;
+
     this.close = async () => {
         return await this.storageDB.close();
     }
 
+    this.refreshInProgress = (forDID) => {
+        return refreshInProgress;
+    }
+
     this.refresh =  (forDID, callback) => {
-        this.storageDB.refresh(callback);
+        refreshInProgress = true;
+        this.storageDB.refresh((err) => {
+            refreshInProgress = false;
+            callback(err);
+        });
     }
 
     this.saveDatabase =  (forDID, callback) => {
