@@ -280,7 +280,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
 
     function convertConditionsToLokiQuery(conditions) {
-        if (!conditions || conditions.length === 0) {
+        if (!conditions || conditions.length === 0 || conditions === "") {
             return {};
         }
         // Array to store the conditions that will go into the $and structure
