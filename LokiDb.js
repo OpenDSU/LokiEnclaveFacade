@@ -183,7 +183,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
 
     this.insertRecord = (tableName, pk, record, callback) => {
-        let start = performance.now();
+        let start = Date.now();
         console.debug(0x667, `Inserting record in table ${tableName} with pk ${pk}`, start);
         let table = db.getCollection(tableName) || db.addCollection(tableName);
         if (record.meta) {
@@ -212,13 +212,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err))
         }
 
-        let end = performance.now();
+        let end = Date.now();
         console.debug(0x667, `Finished inserting record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
         callback(null, result);
     }
 
     this.updateRecord = function (tableName, pk, record, callback) {
-        let start = performance.now();
+        let start = Date.now();
         console.debug(0x667, `Updating record in table ${tableName} with pk ${pk}`, start);
         let table = db.getCollection(tableName) || db.addCollection(tableName);
         let doc;
@@ -247,13 +247,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(createOpenDSUErrorWrapper(` Could not insert record in table ${tableName} `, err));
         }
 
-        let end = performance.now();
+        let end = Date.now();
         console.debug(0x667, `Finished updating record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
         callback(null, result);
     }
 
     this.deleteRecord = function (tableName, pk, callback) {
-        let start = performance.now();
+        let start = Date.now();
         console.debug(0x667, `Deleting record in table ${tableName} with pk ${pk}`, start);
         let table = db.getCollection(tableName);
         if (!table) {
@@ -271,13 +271,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
 
-        let end = performance.now();
+        let end = Date.now();
         console.debug(0x667, `Finished deleting record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
         callback(null, record);
     }
 
     this.getRecord = function (tableName, pk, callback) {
-        let start = performance.now();
+        let start = Date.now();
         console.debug(0x667, `Getting record in table ${tableName} with pk ${pk}`, start);
         let table = db.getCollection(tableName);
         if (!table) {
@@ -290,7 +290,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(createOpenDSUErrorWrapper(`Could not find object with pk ${pk}`, err));
         }
 
-        let end = performance.now();
+        let end = Date.now();
         console.debug(0x667, `Finished getting record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
         callback(null, result)
     }
@@ -342,7 +342,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
 
     this.filter = function (tableName, filterConditions, sort, max, callback) {
-        let start = performance.now();
+        let start = Date.now();
         console.debug(0x667, `Filtering records in table ${tableName}`, start);
         if (typeof filterConditions === "string") {
             filterConditions = [filterConditions];
@@ -390,13 +390,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
 
-        let end = performance.now();
+        let end = Date.now();
         console.debug(0x667, `Finished filtering records in table ${tableName}`, end, (end - start)/1000);
         callback(null, result);
     }
 
     this.getAllRecords = (tableName, callback) => {
-        let start = performance.now();
+        let start = Date.now();
         console.debug(0x667, `Getting all records in table ${tableName}`, start);
         let table = db.getCollection(tableName);
         if (!table) {
@@ -413,7 +413,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         if (!results) {
             results = [];
         }
-        let end = performance.now();
+        let end = Date.now();
         console.debug(0x667, `Finished getting all records in table ${tableName}`, end, (end - start)/1000);
         callback(null, results);
     };

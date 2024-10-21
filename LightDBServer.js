@@ -194,7 +194,7 @@ function LightDBServer(config, callback) {
 
             let didDocument;
             const __verifySignatureAndExecuteCommand = () => {
-                let start = performance.now();
+                let start = Date.now();
                 logger.debug(0x667,`Start executing command on server: ${command.commandName} commandID: ${command.commandID}`, start);
                 didDocument.verify(body.command, $$.Buffer.from(body.signature, "base64"), async (err, result) => {
                     if (err) {
@@ -248,7 +248,7 @@ function LightDBServer(config, callback) {
                             res.write(JSON.stringify(result));
                         }
 
-                        let end = performance.now();
+                        let end = Date.now();
                         logger.debug(0x667,`Finished executing command on server: ${command.commandName} commandID: ${command.commandID}`, end, (end - start)/1000);
                         res.end();
                     }
