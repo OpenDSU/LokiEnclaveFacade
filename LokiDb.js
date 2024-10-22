@@ -223,7 +223,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         let table = db.getCollection(tableName) || db.addCollection(tableName);
         let doc;
         try {
-            doc = table.by("pk", pk);
+            doc = table.findObject({'pk': pk});
             if (!doc && record.__fallbackToInsert) {
                 //this __fallbackToInsert e.g. is used by fixedURL component
                 record.__fallbackToInsert = undefined;
