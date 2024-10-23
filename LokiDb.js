@@ -169,7 +169,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Could not create collection ${tableName}`, err))
         }
-        callback();
+        callback(undefined, {message: `Collection ${tableName} created`});
     }
 
     this.addIndex = function (tableName, property, callback) {
@@ -185,7 +185,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     this.insertRecord = (tableName, pk, record, callback) => {
         let start = Date.now();
         console.debug(0x667, `Inserting record in table ${tableName} with pk ${pk}`, start);
-        let table = db.getCollection(tableName) || db.addCollection(tableName);
+        let table = db.getCollection(tableName) || db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
         if (record.meta) {
             delete record.meta;
         }
@@ -220,10 +220,10 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     this.updateRecord = function (tableName, pk, record, callback) {
         let start = Date.now();
         console.debug(0x667, `Updating record in table ${tableName} with pk ${pk}`, start);
-        let table = db.getCollection(tableName) || db.addCollection(tableName);
+        let table = db.getCollection(tableName) || db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
         let doc;
         try {
-            doc = table.findObject({'pk': pk});
+            doc = table.by("pk", pk);
             if (!doc && record.__fallbackToInsert) {
                 //this __fallbackToInsert e.g. is used by fixedURL component
                 record.__fallbackToInsert = undefined;
@@ -285,7 +285,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
         let result;
         try {
-            result = table.findObject({'pk': pk});
+            result = table.by('pk', pk);
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Could not find object with pk ${pk}`, err));
         }
