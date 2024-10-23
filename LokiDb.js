@@ -260,13 +260,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback();
         }
 
-        let record = table.findOne({'pk': pk});
+        let record = table.by('pk', pk);
         if (!record) {
             return callback(undefined, {pk});
         }
 
         try {
-            table.findAndRemove({'pk': pk});
+            table.remove(record);
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Couldn't do remove for pk ${pk} in ${tableName}`, err))
         }
