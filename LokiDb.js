@@ -45,6 +45,20 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
     });
 
+    let cachedCollections = {};
+
+    // Function to get collection with caching
+    function getCollection(tableName) {
+        if (!cachedCollections[tableName]) {
+            let collection = db.getCollection(tableName);
+            if (!collection) {
+                collection = db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
+            }
+            cachedCollections[tableName] = collection;
+        }
+        return cachedCollections[tableName];
+    }
+
     this.close = async () => {
         return new Promise((resolve, reject) => {
             db.close((err) => {
@@ -56,15 +70,15 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         });
     }
 
-    this.refresh =  (callback) => {
+    this.refresh = (callback) => {
         logger.info(`Refreshing database ${rootFolder}`);
         db.loadDatabaseInternal(undefined, callback);
     }
 
     this.saveDatabase = (callback) => {
         logger.info(`Saving Loki database ${rootFolder}`);
-        db.saveDatabase((err)=>{
-            if(err){
+        db.saveDatabase((err) => {
+            if (err) {
                 return callback(err);
             }
             callback(undefined, {message: `Database ${rootFolder} saved`});
@@ -135,7 +149,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
 
     this.count = function (tableName, callback) {
-        let table = db.getCollection(tableName);
+        let table = getCollection(tableName);
         if (!table) {
             return callback(createOpenDSUErrorWrapper(`Table ${tableName} not found`))
         }
@@ -173,7 +187,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     }
 
     this.addIndex = function (tableName, property, callback) {
-        let table = db.getCollection(tableName) || db.addCollection(tableName);
+        let table = getCollection(tableName);
         try {
             table.ensureIndex(property, true);
         } catch (err) {
@@ -185,7 +199,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     this.insertRecord = (tableName, pk, record, callback) => {
         let start = Date.now();
         console.debug(0x667, `Inserting record in table ${tableName} with pk ${pk}`, start);
-        let table = db.getCollection(tableName) || db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
+        let table = getCollection(tableName);
         if (record.meta) {
             delete record.meta;
         }
@@ -194,13 +208,14 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             delete record.$loki;
         }
 
-        let foundRecord = table.findObject({'pk': pk});
+        let foundRecord = table.by('pk', pk);
 
         if (foundRecord) {
             let error = `A record with pk ${pk} already exists in ${tableName}`
             logger.log(error);
             return callback(createOpenDSUErrorWrapper(error));
         }
+
         let result;
         try {
             result = table.insert({
@@ -213,14 +228,14 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         let end = Date.now();
-        console.debug(0x667, `Finished inserting record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
+        console.debug(0x667, `Finished inserting record in table ${tableName} with pk ${pk}`, end, (end - start) / 1000);
         callback(null, result);
     }
 
     this.updateRecord = function (tableName, pk, record, callback) {
         let start = Date.now();
         console.debug(0x667, `Updating record in table ${tableName} with pk ${pk}`, start);
-        let table = db.getCollection(tableName) || db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
+        let table = getCollection(tableName);
         let doc;
         try {
             doc = table.by("pk", pk);
@@ -248,14 +263,14 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         let end = Date.now();
-        console.debug(0x667, `Finished updating record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
+        console.debug(0x667, `Finished updating record in table ${tableName} with pk ${pk}`, end, (end - start) / 1000);
         callback(null, result);
     }
 
     this.deleteRecord = function (tableName, pk, callback) {
         let start = Date.now();
         console.debug(0x667, `Deleting record in table ${tableName} with pk ${pk}`, start);
-        let table = db.getCollection(tableName);
+        let table = getCollection(tableName);
         if (!table) {
             return callback();
         }
@@ -272,14 +287,35 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         let end = Date.now();
-        console.debug(0x667, `Finished deleting record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
+        console.debug(0x667, `Finished deleting record in table ${tableName} with pk ${pk}`, end, (end - start) / 1000);
         callback(null, record);
+    }
+
+    this.getOneRecord = function (tableName, callback) {
+        let start = Date.now();
+        console.debug(0x667, `Getting one record in table ${tableName}`, start);
+        let table = getCollection(tableName);
+        if (!table) {
+            return callback(undefined, []);
+        }
+
+        let result;
+        try {
+            result = table.data[0];
+        } catch (err) {
+            return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
+        }
+
+        let end = Date.now();
+        console.debug(0x667, `Finished getting one record in table ${tableName}`, end, (end - start) / 1000);
+        callback(null, result);
+
     }
 
     this.getRecord = function (tableName, pk, callback) {
         let start = Date.now();
         console.debug(0x667, `Getting record in table ${tableName} with pk ${pk}`, start);
-        let table = db.getCollection(tableName);
+        let table = getCollection(tableName);
         if (!table) {
             return callback(Error(`Table ${tableName} not found`));
         }
@@ -291,7 +327,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         let end = Date.now();
-        console.debug(0x667, `Finished getting record in table ${tableName} with pk ${pk}`, end, (end - start)/1000);
+        console.debug(0x667, `Finished getting record in table ${tableName} with pk ${pk}`, end, (end - start) / 1000);
         callback(null, result)
     }
 
@@ -316,7 +352,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
 
             if (operator.toLowerCase() === 'like') {
                 // Process LIKE condition, and allow complex regex patterns (no quotes required)
-                conditionObject[field] = { [lokiOperator]: new RegExp(value.trim(), 'i') }; // case-insensitive regex
+                conditionObject[field] = {[lokiOperator]: new RegExp(value.trim(), 'i')}; // case-insensitive regex
             } else {
                 // Process other operators, handling numeric and string cases
                 const numericValue = parseFloat(value);
@@ -328,7 +364,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             andConditions.push(conditionObject);
         });
 
-        return { $and: andConditions };
+        return {$and: andConditions};
     }
 
     function __getSortingField(filterConditions) {
@@ -371,34 +407,26 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         const sortingField = __getSortingField(filterConditions);
-        filterConditions = convertConditionsToLokiQuery(filterConditions);
+        const filterQuery = convertConditionsToLokiQuery(filterConditions);
 
-        let table = db.getCollection(tableName);
-        if (!table) {
-            return callback(undefined, []);
-        }
-        let direction = false;
-        if (sort === "desc" || sort === "dsc") {
-            direction = true;
-        }
+        let table = getCollection(tableName);
+        if (!table) return callback(undefined, []);
 
-        let result;
-        try {
-            result = table.chain().find(filterConditions).simplesort(sortingField, direction).limit(max).data();
-        } catch (err) {
-            return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
-        }
+        let result = table.find(filterQuery);
 
+        if (sort === "desc") {
+            result = table.chain().simplesort(sortingField, true).limit(max || Infinity).data();
+        }
 
         let end = Date.now();
-        console.debug(0x667, `Finished filtering records in table ${tableName}`, end, (end - start)/1000);
+        console.debug(0x667, `Finished filtering records in table ${tableName}`, end, (end - start) / 1000);
         callback(null, result);
     }
 
     this.getAllRecords = (tableName, callback) => {
         let start = Date.now();
         console.debug(0x667, `Getting all records in table ${tableName}`, start);
-        let table = db.getCollection(tableName);
+        let table = getCollection(tableName);
         if (!table) {
             return callback(undefined, []);
         }
@@ -414,7 +442,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             results = [];
         }
         let end = Date.now();
-        console.debug(0x667, `Finished getting all records in table ${tableName}`, end, (end - start)/1000);
+        console.debug(0x667, `Finished getting all records in table ${tableName}`, end, (end - start) / 1000);
         callback(null, results);
     };
 
@@ -649,9 +677,9 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
                 }
 
                 let signature;
-                try{
+                try {
                     signature = CryptoSkills.applySkill(didThatIsSigning.getMethodName(), CryptoSkills.NAMES.SIGN, hash, privateKeys[privateKeys.length - 1]);
-                }catch(err){
+                } catch (err) {
                     return callback(err);
                 }
                 callback(undefined, signature);
