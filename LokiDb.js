@@ -45,18 +45,13 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
     });
 
-    let cachedCollections = {};
-
     // Function to get collection with caching
     function getCollection(tableName) {
-        if (!cachedCollections[tableName]) {
-            let collection = db.getCollection(tableName);
-            if (!collection) {
-                collection = db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
-            }
-            cachedCollections[tableName] = collection;
+        let collection = db.getCollection(tableName);
+        if (!collection) {
+            collection = db.addCollection(tableName, {indices: ["pk", "__timestamp"]});
         }
-        return cachedCollections[tableName];
+        return collection;
     }
 
     this.close = async () => {
