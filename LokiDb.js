@@ -297,7 +297,6 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         let result;
         try {
             result = table.data[0];
-            table.remove(result);
         } catch (err) {
             return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
         }
