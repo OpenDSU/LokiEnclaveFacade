@@ -18,7 +18,7 @@ assert.callback("Enclave default db insert test", (testFinishCallback) => {
         let dbPath = path.join(folder, "test_db");
         // fs.mkdirSync(dbPath, {recursive: true});
         let testDb = getEnclaveDB(dbPath);
-
+        await $$.promisify(testDb.createCollection)(undefined, TABLE_NAME, ["pk", "age", "id", "name"]);
         for (let i = 0; i < numberOfREcords; i++) {
             let pk = Math.floor(Math.random() * 5000);
             await $$.promisify(testDb.insertRecord)("DID_" + pk, TABLE_NAME, pk, {

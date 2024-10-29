@@ -304,6 +304,10 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
             return callback(createOpenDSUErrorWrapper(`Could not find object with pk ${pk}`, err));
         }
 
+        if (!result) {
+            result = null;
+        }
+
         callback(null, result)
     }
 
@@ -381,16 +385,24 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
         }
 
         const sortingField = __getSortingField(filterConditions);
-        const filterQuery = convertConditionsToLokiQuery(filterConditions);
+        filterConditions = convertConditionsToLokiQuery(filterConditions);
 
-        let table = getCollection(tableName);
-        if (!table) return callback(undefined, []);
-
-        let result = table.find(filterQuery);
-
-        if (sort === "desc") {
-            result = table.chain().simplesort(sortingField, true).limit(max || Infinity).data();
+        let table = db.getCollection(tableName);
+        if (!table) {
+            return callback(undefined, []);
         }
+        let direction = false;
+        if (sort === "desc" || sort === "dsc") {
+            direction = true;
+        }
+
+        let result;
+        try {
+            result = table.chain().find(filterConditions).simplesort(sortingField, direction).limit(max).data();
+        } catch (err) {
+            return callback(createOpenDSUErrorWrapper(`Filter operation failed on ${tableName}`, err));
+        }
+
 
         callback(null, result);
     }
