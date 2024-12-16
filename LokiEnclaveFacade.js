@@ -114,7 +114,7 @@ function LokiEnclaveFacade(rootFolder, autosaveInterval, adaptorConstructorFunct
         this.storageDB.getOneRecord(tableName, callback);
     }
 
-    this.count = (tableName, callback) => {
+    this.count = (forDID, tableName, callback) => {
         this.storageDB.count(tableName, callback);
     }
 

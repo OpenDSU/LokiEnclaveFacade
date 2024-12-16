@@ -10,13 +10,14 @@ process.on('SIGTERM', (signal) => {
 });
 
 function LightDBServer(config, callback) {
-    let {lightDBStorage, lightDBPort, lightDBDynamicPort, host} = config;
+    let {lightDBStorage, lightDBPort, lightDBDynamicPort, host, sqlConfig} = config;
     const apihubModule = require("apihub");
-    const LokiEnclaveFacade = require("./LokiEnclaveFacade");
+    const LokiEnclaveFacade = require("./index");
+    const SQLAdapter = require("lightDB-sql-adapter");
     const httpWrapper = apihubModule.getHttpWrapper();
     const Server = httpWrapper.Server;
     const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
-    //in read only mode if the time from the last refresh is bigger than this timeout then a refresh will be executed
+    //in read-only mode, if the time from the last refresh is bigger than this timeout, then a refresh will be executed
     const LAST_REFRESH_TIMEOUT = 30000;
     const lastRefreshes = {};
 
@@ -39,8 +40,20 @@ function LightDBServer(config, callback) {
             if (entry.isDirectory()) {
                 let enclaveName = entry.name;
                 logger.info(`Loading database ${enclaveName}`);
-                enclaves[enclaveName] = new LokiEnclaveFacade(path.join(lightDBStorage, enclaveName, DATABASE));
-                clonedEnclaves[enclaveName] = new LokiEnclaveFacade(path.join(lightDBStorage, enclaveName, DATABASE));
+                if (sqlConfig) {
+                    enclaves[enclaveName] = SQLAdapter.createSQLAdapterInstance({
+                        ...sqlConfig,
+                        database: enclaveName  // Use the enclave name as the database name
+                    });
+                    clonedEnclaves[enclaveName] = SQLAdapter.createSQLAdapterInstance({
+                        ...sqlConfig,
+                        database: enclaveName
+                    });
+                } else {
+                    // For LokiDB, use the original filesystem-based approach
+                    enclaves[enclaveName] = LokiEnclaveFacade.createLokiEnclaveFacadeInstance(path.join(lightDBStorage, enclaveName, DATABASE));
+                    clonedEnclaves[enclaveName] = LokiEnclaveFacade.createLokiEnclaveFacadeInstance(path.join(lightDBStorage, enclaveName, DATABASE));
+                }
             }
         }
     } catch (err) {
@@ -307,7 +320,7 @@ function LightDBServer(config, callback) {
                     res.write("Already exists");
                     return res.end();
                 }
-                enclaves[dbName] = new LokiEnclaveFacade(path.join(storage, DATABASE));
+                enclaves[dbName] = LokiEnclaveFacade.createLokiEnclaveFacadeInstance(path.join(storage, DATABASE));
                 res.statusCode = 201;
                 res.end();
             })

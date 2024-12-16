@@ -8,19 +8,15 @@ const numberOfREcords = 5;
 const TABLE_NAME = "testTable";
 const DID = "DID_newPk";
 
-function getEnclaveDB(dbName) {
-    let createLokiEnclaveFacadeInstance = require("../index.js").createLokiEnclaveFacadeInstance;
-    return createLokiEnclaveFacadeInstance(dbName);
-}
-
 function getTestDb(adapter) {
     assert.callback("Enclave default db insert test", (testFinishCallback) => {
         dc.createTestFolder("enclaveDBTest", async function (err, folder) {
             const path = require("path");
             let dbPath = path.join(folder, "test_db");
             // fs.mkdirSync(dbPath, {recursive: true});
-            let testDb = getEnclaveDB(dbPath);
-            await $$.promisify(testDb.createCollection)(undefined, TABLE_NAME, ["pk", "age", "id", "name"]);
+            let testDb = adapter;
+            await $$.promisify(testDb.removeCollection)(DID, TABLE_NAME)
+            await $$.promisify(testDb.createCollection, testDb)(DID, TABLE_NAME, ["pk", "age", "id", "name"]);
             for (let i = 0; i < numberOfREcords; i++) {
                 let pk = Math.floor(Math.random() * 5000);
                 await $$.promisify(testDb.insertRecord)("DID_" + pk, TABLE_NAME, pk, {
@@ -29,7 +25,7 @@ function getTestDb(adapter) {
                     id: Math.floor(Math.random() * 1000)
                 });
             }
-            let nr = await $$.promisify(testDb.count)(TABLE_NAME);
+            let nr = await $$.promisify(testDb.count)(DID, TABLE_NAME);
             assert.equal(nr, numberOfREcords);
 
             await $$.promisify(testDb.insertRecord)(DID, TABLE_NAME, "newPk", {
@@ -37,7 +33,9 @@ function getTestDb(adapter) {
                 id: Math.floor(Math.random() * 1000)
             });
 
-            nr = await $$.promisify(testDb.count)(TABLE_NAME)
+            // let record = await $$.promisify(testDb.getAllRecords)(DID, TABLE_NAME);
+            // console.log("----------------------", record);
+            nr = await $$.promisify(testDb.count)(DID, TABLE_NAME)
             assert.equal(nr, numberOfREcords + 1);
 
             let data = await $$.promisify(testDb.getRecord)(DID, TABLE_NAME, "newPk");
@@ -52,13 +50,13 @@ function getTestDb(adapter) {
             assert.equal(data.id, "someID");
 
             try {
-                await $$.promisify(testDb.getRecord)(DID, "wrongTable", "newPk")
+                await $$.promisify(testDb.getRecord)(DID, TABLE_NAME, "newPk")
             } catch (e) {
                 assert.notEqual(e, null);
             }
 
             try {
-                await $$.promisify(testDb.deleteRecord)(DID, "wrongTable", "newPk")
+                await $$.promisify(testDb.deleteRecord)(DID, TABLE_NAME, "newPk")
             } catch (e) {
                 assert.notEqual(e, null);
             }
@@ -76,7 +74,7 @@ function getTestDb(adapter) {
                 assert.equal(e, null);
             }
 
-            nr = await $$.promisify(testDb.count)(TABLE_NAME)
+            nr = await $$.promisify(testDb.count)(DID, TABLE_NAME)
             assert.equal(nr, numberOfREcords);
 
             data = await $$.promisify(testDb.filter)(DID, TABLE_NAME)
