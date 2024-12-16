@@ -13,7 +13,6 @@ function LightDBServer(config, callback) {
     let {lightDBStorage, lightDBPort, lightDBDynamicPort, host, sqlConfig} = config;
     const apihubModule = require("apihub");
     const LokiEnclaveFacade = require("./index");
-    const SQLAdapter = require("lightDB-sql-adapter");
     const httpWrapper = apihubModule.getHttpWrapper();
     const Server = httpWrapper.Server;
     const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -41,6 +40,7 @@ function LightDBServer(config, callback) {
                 let enclaveName = entry.name;
                 logger.info(`Loading database ${enclaveName}`);
                 if (sqlConfig) {
+                    const SQLAdapter = require("lightDB-sql-adapter");
                     enclaves[enclaveName] = SQLAdapter.createSQLAdapterInstance({
                         ...sqlConfig,
                         database: enclaveName  // Use the enclave name as the database name
