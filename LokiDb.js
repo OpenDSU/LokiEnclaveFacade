@@ -23,8 +23,7 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
     const SEED_SSIS_TABLE = "seedssis";
     const DIDS_PRIVATE_KEYS = "dids_private";
     const AUTOSAVE_INTERVAL = 5000;
-    const adapter = adaptorConstructorFunction === undefined ? new Adapters.FS() : new adaptorConstructorFunction();
-
+    const adapter = adaptorConstructorFunction === undefined ? new Adapters.PARTITIONED() : new adaptorConstructorFunction();
     logger.info(`Initializing Loki database ${rootFolder}`);
     autosaveInterval = autosaveInterval || AUTOSAVE_INTERVAL;
     if (typeof rootFolder === "undefined") {
