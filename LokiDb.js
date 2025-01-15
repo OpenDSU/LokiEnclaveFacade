@@ -334,8 +334,9 @@ function LokiDb(rootFolder, autosaveInterval, adaptorConstructorFunction) {
                 // Process LIKE condition, and allow complex regex patterns (no quotes required)
                 conditionObject[field] = {[lokiOperator]: new RegExp(value.trim(), 'i')}; // case-insensitive regex
             } else {
+
                 // Process other operators, handling numeric and string cases
-                const numericValue = parseFloat(value);
+                const numericValue = /^[0-9]+$/.test(value) ? parseFloat(value) : value;
                 conditionObject[field] = {
                     [lokiOperator]: isNaN(numericValue) ? value.replace(/['"]/g, '').trim() : numericValue
                 };
